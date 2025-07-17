@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4M Management System v18.0 (Advanced Surveillance)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.0.18/24/solid/css/heroicons.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        .tab-button.active { border-bottom-color: #2563eb; color: #2563eb; font-weight: 600; }
+        .risk-high { background-color: #fee2e2; color: #b91c1c; } .risk-medium { background-color: #fef3c7; color: #b45309; } .risk-low { background-color: #dcfce7; color: #166534; }
+        .status-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+        .card-highlight { animation: highlight-animation 2.5s ease-out; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.7); border-radius: 0.5rem; }
+        @keyframes highlight-animation { 0% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.9); transform: scale(1.02); } 70% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); transform: scale(1); } 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0); } }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .progress-bar { display: flex; justify-content: space-between; align-items: center; position: relative; width: 100%; margin: 1rem 0; }
+        .progress-bar::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background-color: #e5e7eb; transform: translateY(-50%); z-index: 1; }
+        .step-item { display: flex; flex-direction: column; align-items: center; z-index: 2; position: relative; }
+        .step-icon { width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: white; border: 2px solid; transition: all 0.3s ease; }
+        .step-label { font-size: 0.65rem; color: #6b7280; margin-top: 0.25rem; text-align: center; }
+        .step-item.completed .step-icon { border-color: #2563eb; background-color: #2563eb; color: white; }
+        .step-item.completed .step-label { color: #1e40af; font-weight: 600; }
+        .step-item.active .step-icon { border-color: #2563eb; background-color: #dbeafe; color: #1e40af; animation: pulse-active 2s infinite; }
+        .step-item.active .step-label { color: #1e40af; font-weight: 700; }
+        @keyframes pulse-active { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .step-item.pending .step-icon { border-color: #d1d5db; background-color: #f3f4f6; color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<div id="app" class="container mx-auto max-w-7xl p-2 sm:p-4">
+    <header class="bg-white shadow-md rounded-lg p-4 mb-4"><div class="flex justify-between items-center"><div class="flex items-center space-x-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-600"><path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" /><path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.342 1.374a3.026 3.026 0 01.64 2.288V17.5c0 .713-.388 1.354-.99 1.731a6.01 6.01 0 01-1.642.705 49.52 49.52 0 01-5.312 0 6.01 6.01 0 01-1.642-.705A2.25 2.25 0 013.75 17.5V6.733c0-.713.388-1.354.99-1.731a6.01 6.01 0 011.642-.705zM12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg><div><h1 class="text-xl sm:text-2xl font-bold text-gray-800">4M Management System v18.0</h1><p class="text-sm text-gray-500">Advanced Surveillance</p></div></div><div class="flex items-center space-x-2"><button id="exportBoardBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Export Board to PDF"><i data-feather="image"></i></button><button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Export Data to Excel"><i data-feather="file-text"></i></button><button id="settingsBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Settings"><i data-feather="settings"></i></button></div></div></header>
+    <nav class="bg-white rounded-t-lg shadow"><div class="flex border-b"><button data-view="form" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent active"><i class="w-5 h-5 inline-block" data-feather="edit"></i> <span>บันทึก 4M</span></button><button data-view="board" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent"><i class="w-5 h-5 inline-block" data-feather="grid"></i> <span>4M Board</span></button><button data-view="dashboard" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent"><i class="w-5 h-5 inline-block" data-feather="bar-chart-2"></i> <span>Dashboard</span></button></div></nav>
+    <main class="bg-white shadow-md rounded-b-lg p-4 sm:p-6 min-h-[60vh]"><div id="view-container"></div></main>
+</div>
+<div id="modal-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURATION ---
+    const { jsPDF } = window.jspdf;
+    const TELEGRAM_CONFIG = {
+        BOT_TOKEN: '7698218579:AAHb0vK959U_IXbRBYEmaXBGIxP3IsKn3uo',
+        CHAT_ID: '7956717161',
+        BASE_URL: 'https://9chai-9chai.github.io/4m-system1/Index18.html'
+    };
+
+    // --- TEMPLATES ---
+    const TPL = {
+        form: `<form id="changeForm" class="space-y-6"><input type="hidden" id="reportId"><div class="form-section p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-4">1. ข้อมูลพื้นฐาน (โดย หัวหน้ากลุ่ม)</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label for="changeType" class="block text-sm font-medium text-gray-700">ประเภท 4M</label><select id="changeType" required class="mt-1 block w-full rounded-md border-gray-300"><option value="">-- เลือกประเภท --</option><option value="Man">Man</option><option value="Machine">Machine</option><option value="Material">Material</option><option value="Method">Method</option></select></div><div><label for="docNumber" class="block text-sm font-medium text-gray-700">เอกสารควบคุม (ถ้ามี)</label><input type="text" id="docNumber" placeholder="เช่น WI-PR-001" class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="changeLine" class="block text-sm font-medium text-gray-700">ไลน์การผลิต</label><input list="lines-list" type="text" id="changeLine" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="lines-list"></datalist></div><div><label for="partName" class="block text-sm font-medium text-gray-700">ชื่อชิ้นงาน</label><input list="parts-list" type="text" id="partName" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="parts-list"></datalist></div><div class="sm:col-span-2"><label for="reporterName" class="block text-sm font-medium text-gray-700">ชื่อผู้รายงาน (หัวหน้ากลุ่ม)</label><input type="text" id="reporterName" required placeholder="เช่น สมชาย ใจดี" class="mt-1 block w-full rounded-md border-gray-300"></div></div></div><div class="form-section p-4 rounded-r-lg bg-gray-50"><div class="flex justify-between items-center mb-2"><h3 class="text-lg font-semibold text-gray-700">2. เหตุผลและมาตรการเบื้องต้น</h3><div class="text-right"><p class="text-sm text-gray-500">คะแนนความเสี่ยง</p><p id="riskScoreDisplay" class="font-bold text-xl text-blue-600">0</p></div></div><p class="text-sm text-gray-500 mb-4">เลือกสาเหตุ (ระบบจะคำนวณความเสี่ยงอัตโนมัติ)</p><div id="reasonCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4"><p class="text-gray-400 col-span-full">กรุณาเลือกประเภท 4M ก่อน</p></div><div><label for="otherReason" class="block text-sm font-medium text-gray-700">รายละเอียดเพิ่มเติม/การควบคุมเบื้องต้น</label><textarea id="otherReason" rows="2" class="mt-1 block w-full rounded-md border-gray-300" placeholder="อธิบายเพิ่มเติม และการควบคุมเบื้องต้นที่ทำไปแล้ว เช่น 'ติดป้ายควบคุม, แยกงาน Lot xxxx'"></textarea></div></div><div class="form-section p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-2">3. ผู้รับผิดชอบหลัก</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label for="dueDate" class="block text-sm font-medium text-gray-700">กำหนดเสร็จ</label><input type="date" id="dueDate" required class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="responsible" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบหลัก (หัวหน้าแผนก)</label><input list="responsibles-list" type="text" id="responsible" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="responsibles-list"></datalist></div></div></div><div class="flex justify-end pt-4"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center space-x-2"><i class="w-6 h-6" data-feather="save"></i><span>เปิดเคส / อัปเดต</span></button></div></form>`,
+        board: `<div class="bg-gray-50 p-4 rounded-lg mb-4 border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"><div><label for="filterText" class="block text-sm text-gray-700">ค้นหา (ID, ไลน์, ชิ้นงาน...)</label><input type="text" id="filterText" class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="filterStatus" class="block text-sm text-gray-700">สถานะ</label><select id="filterStatus" class="mt-1 block w-full rounded-md border-gray-300"><option value="">ทั้งหมด</option></select></div><div><label for="filterRisk" class="block text-sm text-gray-700">ความเสี่ยง</label><select id="filterRisk" class="mt-1 block w-full rounded-md border-gray-300"><option value="">ทั้งหมด</option><option value="High">สูง</option><option value="Medium">ปานกลาง</option><option value="Low">ต่ำ</option></select></div><div class="flex items-end"><button id="clearFiltersBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm w-full"><i data-feather="x-circle" class="w-4 h-4"></i><span>ล้างตัวกรอง</span></button></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"><div id="board-Man" class="bg-blue-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-blue-800 mb-3 text-center">MAN</h2><div class="space-y-3"></div></div><div id="board-Machine" class="bg-yellow-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-yellow-800 mb-3 text-center">MACHINE</h2><div class="space-y-3"></div></div><div id="board-Material" class="bg-green-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-green-800 mb-3 text-center">MATERIAL</h2><div class="space-y-3"></div></div><div id="board-Method" class="bg-purple-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-purple-800 mb-3 text-center">METHOD</h2><div class="space-y-3"></div></div></div><div id="no-data-message" class="hidden text-center text-gray-500 py-10"><i class="w-16 h-16 mx-auto text-gray-400" data-feather="folder-off"></i><p class="mt-4 text-lg">ไม่พบข้อมูล</p></div>`,
+        dashboard: `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Top 5 Change Reasons</h3><canvas id="reasonsChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">4M Change Ratio</h3><canvas id="typesChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Top 5 Production Lines</h3><canvas id="linesChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Defects from 4M Change</h3><canvas id="defectsChart"></canvas></div></div>`,
+        modals: `<div id="actionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><h3 id="actionModalTitle" class="text-lg font-bold mb-4">Action</h3><form id="actionForm"><input type="hidden" id="actionReportId"><input type="hidden" id="actionName"><div class="space-y-4"><div><label for="actionUser" class="block text-sm font-medium text-gray-700">ชื่อผู้ดำเนินการ</label><input type="text" id="actionUser" required class="mt-1 block w-full rounded-md border-gray-300"></div><div id="checklistContainer" class="hidden"><label class="block text-sm font-medium text-gray-700">Checklist มาตรฐาน</label><div id="actionCheckboxes" class="mt-1 p-3 max-h-40 overflow-y-auto space-y-2 border rounded-md bg-gray-50"></div></div><div><label for="actionNotes" class="block text-sm font-medium text-gray-700">บันทึก / อื่นๆ (โปรดระบุ)</label><textarea id="actionNotes" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="actionEvidence" class="block text-sm font-medium text-gray-700">แนบหลักฐาน (รูปภาพ)</label><input type="file" id="actionEvidence" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="actionImagePreview" class="hidden mt-2 max-h-40 rounded"></div></div><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="submit" id="actionSubmitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">ยืนยัน</button></div></form></div></div> <div id="qaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"><h3 class="text-lg font-bold mb-4">บันทึกผลตรวจสอบคุณภาพ (QA)</h3><form id="qaForm"><input type="hidden" id="qaReportId"><div class="space-y-4"><div><label class="block text-sm font-medium text-gray-700">ผลการตรวจสอบคุณภาพ</label><div class="flex items-center space-x-4 mt-1"><label class="flex items-center"><input type="radio" name="qaResult" value="OK" class="text-green-600" required><span class="ml-2 text-green-700 font-semibold">OK</span></label><label class="flex items-center"><input type="radio" name="qaResult" value="NG" class="text-red-600"><span class="ml-2 text-red-700 font-semibold">NG</span></label></div></div><div id="defectSection" class="hidden"><label for="defectCode" class="block text-sm font-medium text-gray-700">รหัสของเสีย (ถ้ามี)</label><select id="defectCode" class="mt-1 block w-full rounded-md border-gray-300"></select></div><div><label for="verifiedBy" class="block text-sm font-medium text-gray-700">ชื่อผู้ตรวจสอบ (QA)</label><input type="text" id="verifiedBy" required placeholder="เช่น สุภาพร QC" class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="qaEvidence" class="block text-sm font-medium text-gray-700">แนบหลักฐาน (รูปภาพที่ตรวจสอบ OK)</label><input type="file" id="qaEvidence" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="qaImagePreview" class="hidden mt-2 max-h-40 rounded"></div></div><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg">ยืนยันผล</button></div></form></div></div> <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><h3 class="text-lg font-bold mb-4">ตั้งค่า Master Data</h3><form id="settingsForm" class="space-y-4"><div><label for="masterParts" class="block text-sm font-medium text-gray-700">รายชื่อชิ้นงาน (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterParts" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="masterLines" class="block text-sm font-medium text-gray-700">ไลน์ผลิต (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterLines" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="masterResponsibles" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบ (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterResponsibles" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div></form><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ปิด</button><button type="button" id="saveSettingsBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">บันทึกค่า</button></div></div></div> <div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold">ประวัติการดำเนินการ</h3><div><button id="exportHistoryBtn" class="bg-green-100 text-green-800 text-xs font-semibold py-1 px-2 rounded-md hover:bg-green-200 flex items-center space-x-1"><i data-feather="download" class="w-3 h-3"></i><span>Export Excel</span></button></div></div><div id="historyContent" class="text-sm space-y-3 max-h-80 overflow-y-auto"></div><div class="mt-4 flex justify-end"><button type="button" class="modal-close-btn text-gray-500 hover:text-gray-700">ปิด</button></div></div></div> <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"><h3 class="text-lg font-bold mb-4">Export Board เป็น PDF</h3><p class="text-sm text-gray-600 mb-4">เลือกสถานะของ Card ที่ต้องการ Export</p><form id="exportForm" class="space-y-2"></form><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="button" id="exportPdfBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Export to PDF</button></div></div></div><div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[100]"><div class="flex flex-col items-center"><div class="spinner"></div><p class="text-white text-lg mt-4">กำลังสร้างไฟล์...</p></div></div>`
+    };
+
+    // --- STATIC DATA ---
+    const REASONS_BY_TYPE = {'Man': ['พนักงานใหม่','พนักงานขาดงาน/ลา','สลับตำแหน่ง/หน้าที่','หัวหน้างานใหม่','พนักงานทักษะไม่พอ','ลดจำนวนคนในไลน์','เพิ่มกะ/คนทำงาน','เปลี่ยน Job Leader','ไม่ปฏิบัติตาม WI','ความเหนื่อยล้า/สุขภาพ'],'Machine': ['เปลี่ยนแม่พิมพ์ (Mold)','เครื่องจักร Breakdown','เปลี่ยน Parameter ฉีด','ซ่อมบำรุงฉุกเฉิน','เปลี่ยน Jig/Fixture','ติดตั้งเครื่องจักรใหม่','ระบบไฟฟ้า/ลมอัดขัดข้อง','เครื่องมือวัดเสีย/ไม่ Calibrate','เปลี่ยน Robot Program','Cooling System มีปัญหา'],'Material': ['เปลี่ยน Lot วัตถุดิบ','เปลี่ยนเกรด/Supplier','ใช้วัสดุทดแทน','วัตถุดิบหมดสต็อก','วัตถุดิบ Spec ไม่ตรง','เปลี่ยนสี/Masterbatch','เปลี่ยน Packaging','วัตถุดิบมีความชื้นสูง','ใช้ Re-grind material','ส่วนผสม/อัตราส่วนผิด'],'Method': ['เปลี่ยน Work Instruction (WI)','ลด/เพิ่ม Cycle Time','เพิ่ม/ลดขั้นตอนทำงาน','เปลี่ยน Layout การผลิต','ทดลองงานใหม่ (Trial)','เปลี่ยนวิธีการตรวจสอบ','เปลี่ยนวิธีการPacking','ปรับปรุง Kaizen','ทำงานไม่ตามขั้นตอน','วิธีการ Set up เปลี่ยนไป']};
+    const RISK_SCORES = {'พนักงานใหม่':3,'พนักงานทักษะไม่พอ':4,'เครื่องจักร Breakdown':5,'ซ่อมบำรุงฉุกเฉิน':5,'เปลี่ยนเกรด/Supplier':4,'วัตถุดิบ Spec ไม่ตรง':4,'วัตถุดิบปนเปื้อน':5,'ทดลองงานใหม่ (Trial)':4};
+    const DEFECT_CODES = ['ไม่มี','รอยบุบ (Dent)','รอยขีดข่วน (Scratch)','แฟลช (Flash)','ฉีดไม่เต็ม (Short Shot)','รอยยุบ (Sink Mark)','สีเพี้ยน (Color Mismatch)','สิ่งปนเปื้อน (Contamination)','ขนาดผิด Spec (Dimension NG)','อื่นๆ'];
+    
+    // **NEW** Nissan-Standard Checklists by Step
+    const CHECKLISTS_BY_STEP = {
+        'Issued': { // Planning by Dept Head
+            'Man': ['กำหนดแผนทบทวน OJT และแนบหลักฐาน', 'กำหนดแผน Job Observation 1 ชม.', 'กำหนดแผนประกบคู่ทำงาน (Buddy System)', 'กำหนดแผนอบรมทักษะเพิ่มเติม', 'กำหนดแผนยืนยันความเข้าใจใน WI/มาตรฐาน'],
+            'Machine': ['กำหนดแผนให้วิศวกรยืนยัน Parameter', 'กำหนดแผนตรวจสอบ First-off 5 ชิ้น', 'กำหนดแผนทวนสอบการ Calibrate', 'กำหนดแผนทำความสะอาดแม่พิมพ์/เครื่องจักร', 'สั่งการให้บันทึกประวัติซ่อมใน Log Book'],
+            'Material': ['กำหนดแผนส่งตัวอย่าง Lot ใหม่ให้ QA ตรวจสอบ', 'กำหนดแผน Trial Run ก่อนใช้จริง', 'กำหนดแผนตรวจสอบเอกสาร CoA/MSDS', 'กำหนดแผนยืนยัน Spec กับ Supplier', 'กำหนดแผนตรวจสอบการจัดเก็บและ Handling'],
+            'Method': ['กำหนดแผนสื่อสาร WI/ขั้นตอนใหม่', 'กำหนดแผนให้วิศกรยืนยันความถูกต้องหน้างาน', 'กำหนดแผนทบทวน Control Plan/FMEA', 'กำหนดจุดตรวจสอบพิเศษ (Special Check Point)', 'กำหนดแผน Audit กระบวนการหลังเปลี่ยนแปลง']
+        },
+        'Planned': { // Confirmation by Section Head
+            'Man': ['ยืนยันว่ามีการทบทวน OJT แล้ว', 'ยืนยันว่ามีการทำ Job Observation แล้ว', 'ยืนยันว่ามีการประกบคู่ทำงานแล้ว', 'ยืนยันว่ามีการจัดอบรมแล้ว', 'ยืนยันว่าพนักงานเข้าใจ WI/มาตรฐานแล้ว'],
+            'Machine': ['ยืนยันว่าวิศวกรได้ยืนยัน Parameter แล้ว', 'ยืนยันว่ามีการตรวจสอบ First-off แล้ว', 'ยืนันว่าเครื่องมือวัดได้ Calibrate แล้ว', 'ยืนยันว่ามีการทำความสะอาดแล้ว', 'ยืนยันว่ามีการบันทึก Log Book แล้ว'],
+            'Material': ['ยืนยันว่ามีการส่งตัวอย่างให้ QA แล้ว', 'ยืนยันว่ามีการทำ Trial Run แล้ว', 'ยืนยันว่ามีการตรวจสอบเอกสาร CoA/MSDS แล้ว', 'ยืนยันว่ามีการยืนยัน Spec กับ Supplier แล้ว', 'ยืนยันว่าการจัดเก็บถูกต้อง'],
+            'Method': ['ยืนยันว่ามีการสื่อสาร WI/ขั้นตอนใหม่แล้ว', 'ยืนยันว่าวิศวกรได้ยืนยันความถูกต้องแล้ว', 'ยืนยันว่ามีการทบทวน Control Plan/FMEA แล้ว', 'ยืนยันว่ามีการกำหนดจุดตรวจสอบพิเศษแล้ว', 'ยืนยันว่ามีการ Audit กระบวนการแล้ว']
+        },
+        'Verified': { // Closing by Team Leader with Surveillance
+            'common': [
+                'เฝ้าระวังกระบวนการ 1 ชม. (Process parameter, Cycle time) ไม่พบปัญหา',
+                'หัวหน้ากลุ่มสุ่มตรวจชิ้นงาน 5 set ทุก 2 ชม. (ผล OK)',
+                'ติดป้ายบ่งชี้ "4M Change" ที่ Lot การผลิต 3 ชม. แรก',
+                'สื่อสารการเปลี่ยนแปลงให้พนักงานกะต่อไปรับทราบเรียบร้อย',
+                'สรุปบทเรียน (Lesson Learned) จากเคสนี้', 
+                'เสนอปรับปรุงเอกสารมาตรฐาน (WI, Control Plan) ถ้ามี'
+            ]
+        }
+    };
+
+    const STATUS_WORKFLOW = { 
+        'Issued':    {step: 1, text:'Issued',         role: 'หน.แผนก', guidance: 'วางแผนมาตรการ',         badgeClass:'bg-gray-400 text-white',  buttonClass: 'bg-orange-500 hover:bg-orange-600 text-white', next:'Planned',   buttonText:'2. วางแผนมาตรการ'}, 
+        'Planned':   {step: 2, text:'Planned',        role: 'หน.ส่วน', guidance: 'ยืนยันการปฏิบัติ (Go & See)', badgeClass:'bg-orange-500 text-white', buttonClass: 'bg-blue-500 hover:bg-blue-600 text-white',   next:'Confirmed', buttonText:'3. ยืนยันการปฏิบัติ'}, 
+        'Confirmed': {step: 3, text:'Confirmed',      role: 'QA',      guidance: 'ตรวจสอบคุณภาพชิ้นงาน',    badgeClass:'bg-blue-500 text-white',   buttonClass: 'bg-teal-500 hover:bg-teal-600 text-white',   next:'Verified',  buttonText:'4. ตรวจสอบคุณภาพ'}, 
+        'Verified':  {step: 4, text:'Verified',       role: 'หน.กลุ่ม', guidance: 'เฝ้าระวังและปิดเคส',       badgeClass:'bg-teal-500 text-white',   buttonClass: 'bg-green-600 hover:bg-green-700 text-white',   next:'Closed',    buttonText:'5. ปิดเคส'}, 
+        'Closed':    {step: 5, text:'Closed',         role: '',        guidance: '',                        badgeClass:'bg-green-600 text-white',  buttonClass: null, next:null, buttonText:null} 
+    };
+    
+    // --- APPLICATION STATE ---
+    let reports = [];
+    let masterData = { parts: [], lines: [], responsibles: [] };
+    let appDOMElements = {};
+    let highlightedReportId = null; 
+
+    // --- CORE FUNCTIONS ---
+    function init() {
+        document.getElementById('modal-container').innerHTML = TPL.modals;
+        
+        initializeDomElements(); 
+        loadMasterData(); 
+        loadData(); 
+        setupEventListeners();
+        
+        const params = new URLSearchParams(window.location.search);
+        const highlightId = params.get('highlight');
+        
+        let initialView = 'form';
+        if (highlightId) {
+            initialView = 'board';
+            highlightedReportId = parseInt(highlightId);
+            const cleanUrl = new URL(window.location);
+            cleanUrl.searchParams.delete('highlight');
+            cleanUrl.searchParams.delete('view'); 
+            history.replaceState(null, '', cleanUrl.toString()); 
+        } else {
+             const view = params.get('view');
+             if (view && TPL[view]) {
+                initialView = view;
+             }
+        }
+        
+        switchView(initialView);
+    }
+
+    function switchView(viewName) {
+        appDOMElements.tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewName));
+        appDOMElements.viewContainer.innerHTML = TPL[viewName] || '<p>View not found</p>';
+        
+        setupViewEventListeners(viewName);
+        
+        if (viewName === 'form') { 
+            populateDatalists();
+            updateDynamicFormElements(); 
+        } else if (viewName === 'board') { 
+            populateStaticDropdowns(); 
+            renderBoard(); 
+        } else if (viewName === 'dashboard') { 
+            renderDashboard(); 
+        }
+        feather.replace();
+    }
+    
+    // --- DATA HANDLING ---
+    function loadData() { try { reports = JSON.parse(localStorage.getItem('4m_reports_v18.0')) || []; } catch (e) { reports = []; } }
+    function saveData() { localStorage.setItem('4m_reports_v18.0', JSON.stringify(reports)); }
+    function loadMasterData() { try { masterData = JSON.parse(localStorage.getItem('4m_master_data_v18.0')) || { parts: [], lines: [], responsibles: [] }; } catch (e) { masterData = { parts: [], lines: [], responsibles: [] }; } }
+    function saveMasterData() { localStorage.setItem('4m_master_data_v18.0', JSON.stringify(masterData)); showNotification('บันทึก Master Data สำเร็จ!'); }
+    
+    // --- EVENT LISTENERS ---
+    function initializeDomElements() {
+        appDOMElements = { 
+            viewContainer: document.getElementById('view-container'), 
+            tabButtons: document.querySelectorAll('.tab-button'), 
+            exportExcelBtn: document.getElementById('exportExcelBtn'), 
+            exportBoardBtn: document.getElementById('exportBoardBtn'), 
+            settingsBtn: document.getElementById('settingsBtn'), 
+            modals: { 
+                action: document.getElementById('actionModal'), 
+                qa: document.getElementById('qaModal'), 
+                settings: document.getElementById('settingsModal'), 
+                history: document.getElementById('historyModal'), 
+                export: document.getElementById('exportModal'), 
+                loading: document.getElementById('loadingOverlay') 
+            }
+        };
+    }
+
+    function setupEventListeners() {
+        appDOMElements.tabButtons.forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+        appDOMElements.exportExcelBtn.addEventListener('click', exportToExcel);
+        appDOMElements.exportBoardBtn.addEventListener('click', openExportModal);
+        appDOMElements.settingsBtn.addEventListener('click', openSettingsModal);
+        document.getElementById('modal-container').addEventListener('click', e => { 
+            if (e.target.classList.contains('modal-close-btn')) {
+                e.target.closest('.fixed').classList.add('hidden');
+            }
+        });
+    }
+    
+    function setupViewEventListeners(view) {
+        if(view === 'form') {
+            document.getElementById('changeForm').addEventListener('submit', handleFormSubmit); 
+            document.getElementById('changeType').addEventListener('change', updateDynamicFormElements); 
+            document.getElementById('reasonCheckboxes').addEventListener('change', calculateRiskScore); 
+        }
+        if(view === 'board') {
+            document.querySelectorAll('#filterText, #filterStatus, #filterRisk').forEach(filter => filter.addEventListener('input', renderBoard)); 
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => { 
+                document.getElementById('filterText').value = ''; 
+                document.getElementById('filterStatus').value = ''; 
+                document.getElementById('filterRisk').value = ''; 
+                renderBoard(); 
+            });
+        }
+    }
+    
+    // --- FORM & REPORT HANDLING ---
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const score = calculateRiskScore();
+        if (score === 0 && !document.getElementById('otherReason').value) {
+            alert('กรุณาเลือกเหตุผลอย่างน้อย 1 ข้อ และ/หรือ อธิบายการควบคุมเบื้องต้น');
+            return;
+        }
+        const reporterName = document.getElementById('reporterName').value;
+        const reportData = {
+            type: document.getElementById('changeType').value,
+            line: document.getElementById('changeLine').value,
+            partName: document.getElementById('partName').value,
+            reporter: reporterName,
+            docNumber: document.getElementById('docNumber').value,
+            risk: {
+                score: score,
+                level: score > 7 ? 'High' : (score > 3 ? 'Medium' : 'Low')
+            },
+            countermeasure: {
+                dueDate: document.getElementById('dueDate').value,
+                responsible: document.getElementById('responsible').value
+            },
+            reason: [...getCheckedValues(document.getElementById('reasonCheckboxes')), ...(document.getElementById('otherReason').value ? [`รายละเอียด: ${document.getElementById('otherReason').value}`] : [])].join('; '),
+            actionPlan: ''
+        };
+        const reportId = document.getElementById('reportId').value;
+        if (reportId) {
+            const reportIndex = reports.findIndex(r => r.id == reportId);
+            if (reportIndex > -1) {
+                const existingPlan = reports[reportIndex].actionPlan;
+                Object.assign(reports[reportIndex], reportData);
+                reports[reportIndex].actionPlan = existingPlan;
+                addHistory(reports[reportIndex], 'แก้ไขข้อมูลพื้นฐาน', reporterName, 'แก้ไขข้อมูลในฟอร์ม', null);
+                showNotification('อัปเดตข้อมูลสำเร็จ!');
+            }
+        } else {
+            const newReport = {
+                ...reportData,
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                status: 'Issued', 
+                qa: { result: null, defect: null, verifiedBy: null, evidence: null, timestamp: null },
+                history: [{
+                    timestamp: new Date().toISOString(),
+                    action: '1. Issued',
+                    user: reporterName,
+                    notes: `เหตุผล: ${reportData.reason}`,
+                    evidence: null
+                }]
+            };
+            reports.unshift(newReport);
+            notifyNewCase(newReport);
+        }
+        saveData();
+        switchView('board');
+    }
+
+    function populateFormForEdit(report) {
+        switchView('form');
+        document.getElementById('reportId').value = report.id;
+        document.getElementById('changeType').value = report.type;
+        document.getElementById('docNumber').value = report.docNumber || '';
+        document.getElementById('changeLine').value = report.line;
+        document.getElementById('partName').value = report.partName;
+        document.getElementById('reporterName').value = report.reporter;
+        
+        updateDynamicFormElements();
+        
+        report.reason.split('; ').forEach(reason => {
+            if (reason.startsWith('รายละเอียด:')) {
+                document.getElementById('otherReason').value = reason.replace('รายละเอียด: ', '');
+            } else {
+                const cb = document.querySelector(`#reasonCheckboxes input[value="${reason}"]`);
+                if(cb) cb.checked = true;
+            }
+        });
+        
+        document.getElementById('dueDate').value = report.countermeasure.dueDate;
+        document.getElementById('responsible').value = report.countermeasure.responsible;
+        calculateRiskScore();
+    }
+    
+    function handleDeleteClick(e) {
+        const id = parseInt(e.currentTarget.dataset.id);
+        if (confirm(`คุณต้องการลบเคส #${id} ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`)) {
+            reports = reports.filter(r => r.id !== id);
+            saveData();
+            renderBoard();
+            showNotification('ลบเคสสำเร็จ');
+        }
+    }
+
+    function handleEditClick(e) {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const report = reports.find(r => r.id === id);
+        if (report) {
+            populateFormForEdit(report);
+        }
+    }
+
+    function addHistory(report, action, user, notes, evidence) {
+        if (!report.history) report.history = [];
+        report.history.push({
+            timestamp: new Date().toISOString(),
+            action,
+            user,
+            notes,
+            evidence
+        });
+    }
+
+    // --- UI RENDERING ---
+    function renderBoard() {
+        const boardView = document.getElementById('view-container');
+        if (!boardView.querySelector('#board-Man')) { return; }
+
+        let filteredReports;
+        if (highlightedReportId) {
+            filteredReports = [...reports];
+        } else {
+            const filterText = boardView.querySelector('#filterText').value.toLowerCase();
+            const filterStatus = boardView.querySelector('#filterStatus').value;
+            const filterRisk = boardView.querySelector('#filterRisk').value;
+            filteredReports = reports.filter(r =>
+                (filterStatus ? r.status === filterStatus : true) &&
+                (filterRisk ? r.risk.level === filterRisk : true) &&
+                (filterText ? (r.line.toLowerCase().includes(filterText) ||
+                               r.partName.toLowerCase().includes(filterText) ||
+                               r.reporter.toLowerCase().includes(filterText) ||
+                               String(r.id).includes(filterText)) : true)
+            );
+        }
+
+        const containers = { Man: boardView.querySelector('#board-Man .space-y-3'), Machine: boardView.querySelector('#board-Machine .space-y-3'), Material: boardView.querySelector('#board-Material .space-y-3'), Method: boardView.querySelector('#board-Method .space-y-3') };
+        Object.values(containers).forEach(c => c.innerHTML = '');
+        boardView.querySelector('#no-data-message').style.display = filteredReports.length === 0 ? 'block' : 'none';
+
+        filteredReports.forEach(report => {
+            if (containers[report.type]) {
+                containers[report.type].appendChild(createReportCard(report));
+            }
+        });
+        feather.replace();
+
+        if (highlightedReportId) {
+            setTimeout(() => {
+                const card = document.getElementById(`report-card-${highlightedReportId}`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.add('card-highlight');
+                }
+                highlightedReportId = null;
+            }, 150);
+        }
+    }
+    
+    function createReportCard(report) {
+        const card = document.createElement('div');
+        card.id = `report-card-${report.id}`;
+        card.className = "bg-white rounded-lg shadow-md border-t-4 p-4 flex flex-col space-y-2";
+        
+        const typeColorMapping = {'Man':'border-blue-500', 'Machine':'border-yellow-500', 'Material':'border-green-500', 'Method':'border-purple-500'};
+        card.classList.add(typeColorMapping[report.type] || 'border-gray-500');
+        
+        const isOverdue = !['Closed'].includes(report.status) && new Date(report.countermeasure.dueDate) < new Date();
+        const statusInfo = STATUS_WORKFLOW[report.status];
+        const formattedDate = new Date(report.timestamp).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        const currentStep = statusInfo.step;
+        const progressBarHtml = `
+            <div class="progress-bar">
+                ${Object.values(STATUS_WORKFLOW).filter(s => s.step).map(step => {
+                    let statusClass = 'pending';
+                    let icon = `<span class="text-xs font-bold">${step.step}</span>`;
+                    if (step.step < currentStep) {
+                        statusClass = 'completed';
+                        icon = `<i data-feather="check" class="w-4 h-4"></i>`;
+                    } else if (step.step === currentStep) {
+                        statusClass = 'active';
+                        icon = `<i data-feather="edit-2" class="w-4 h-4"></i>`;
+                    }
+                    return `
+                        <div class="step-item ${statusClass}" title="${step.step}. ${step.text}">
+                            <div class="step-icon">${icon}</div>
+                            <span class="step-label">${step.text}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        
+        const detailsHtml = `
+            <div class="space-y-1 text-xs mt-2">
+                <details class="bg-gray-50 rounded p-1">
+                    <summary class="cursor-pointer font-semibold text-gray-600">เหตุผลและการควบคุมเบื้องต้น...</summary>
+                    <p class="p-2 border-t text-gray-700 whitespace-pre-wrap">${report.reason}</p>
+                </details>
+                ${report.actionPlan ? `
+                <details class="bg-yellow-50 rounded p-1" open>
+                    <summary class="cursor-pointer font-semibold text-yellow-800">แผนมาตรการ (โดย หน.แผนก)...</summary>
+                    <p class="p-2 border-t text-yellow-900 whitespace-pre-wrap">${report.actionPlan}</p>
+                </details>
+                ` : ''}
+            </div>
+        `;
+        
+        const actionGuidanceHtml = statusInfo.next ? `
+            <div class="text-center bg-blue-50 border border-blue-200 rounded-md p-2 my-2">
+                <p class="text-xs text-blue-800 font-semibold">ขั้นตอนถัดไป: <span class="font-bold">${statusInfo.guidance}</span></p>
+                <p class="text-xs text-blue-700">ผู้รับผิดชอบ: <span class="font-bold">${statusInfo.role}</span></p>
+            </div>
+        ` : '';
+
+        let actionButton = statusInfo.next ? `<button data-id="${report.id}" data-action="${report.status}" class="action-btn w-full mt-auto text-sm py-2 rounded-lg font-bold ${statusInfo.buttonClass}">${statusInfo.buttonText}</button>` : `<div class="text-center text-sm py-2 text-green-700 font-bold flex items-center justify-center"><i data-feather="check-circle" class="w-5 h-5 mr-2"></i>เคสปิดแล้ว</div>`;
+        
+        card.innerHTML = `
+            <div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="text-base font-bold text-gray-900 leading-tight">${report.partName}</h4>
+                        <p class="text-sm font-semibold text-gray-500">${report.line}</p>
+                    </div>
+                    <div class="flex-shrink-0 flex items-center space-x-2">
+                         <span class="status-badge ${report.risk.level === 'High' ? 'risk-high' : (report.risk.level === 'Medium' ? 'risk-medium' : 'risk-low')}">Risk: ${report.risk.level}</span>
+                         ${isOverdue ? `<span class="status-badge bg-red-600 text-white animate-pulse">OVERDUE</span>` : ''}
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">ID: ${report.id} | เปิดเคส: ${formattedDate} น.</p>
+            </div>
+            
+            ${progressBarHtml}
+            ${detailsHtml}
+            
+            <div class="mt-auto pt-2 space-y-2">
+                ${actionGuidanceHtml}
+                <div class="flex-grow">${actionButton}</div>
+                <div class="flex items-center justify-center space-x-2 text-xs border-t pt-2">
+                    <button title="ส่งแจ้งเตือน" data-id="${report.id}" class="remind-btn text-gray-400 hover:text-blue-600 p-1 ${report.status === 'Closed' ? 'hidden' : ''}"><i data-feather="bell" class="w-4 h-4"></i></button>
+                    <button title="ประวัติ" data-id="${report.id}" class="history-btn text-gray-400 hover:text-blue-600 p-1"><i data-feather="clock" class="w-4 h-4"></i></button>
+                    <button title="แก้ไขข้อมูลพื้นฐาน" data-id="${report.id}" class="edit-btn text-gray-400 hover:text-yellow-600 p-1"><i data-feather="edit" class="w-4 h-4"></i></button>
+                    <button title="Export PNG" data-id="${report.id}" class="export-card-btn text-gray-400 hover:text-blue-600 p-1"><i data-feather="camera" class="w-4 h-4"></i></button>
+                    <button title="ลบ" data-id="${report.id}" class="delete-btn text-gray-400 hover:text-red-600 p-1"><i data-feather="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>`;
+        
+        card.querySelector('.action-btn')?.addEventListener('click', (e) => openActionModal(parseInt(e.currentTarget.dataset.id), e.currentTarget.dataset.action));
+        card.querySelector('.remind-btn')?.addEventListener('click', (e) => notifyReminder(parseInt(e.currentTarget.dataset.id)));
+        card.querySelector('.history-btn')?.addEventListener('click', showHistoryModal);
+        card.querySelector('.edit-btn')?.addEventListener('click', handleEditClick);
+        card.querySelector('.export-card-btn')?.addEventListener('click', exportCardAsPng);
+        card.querySelector('.delete-btn')?.addEventListener('click', handleDeleteClick);
+        return card;
+    }
+
+    // --- MODAL HANDLING ---
+    function openActionModal(reportId, action) {
+        const report = reports.find(r => r.id === reportId);
+        if (!report) return;
+
+        const statusInfo = STATUS_WORKFLOW[action];
+        if (!statusInfo || !statusInfo.next) return;
+        
+        if (action === 'Confirmed') {
+            openQaModal(reportId);
+            return;
+        }
+
+        const modal = appDOMElements.modals.action;
+        const form = modal.querySelector('form');
+        form.reset();
+        
+        modal.querySelector('#actionModalTitle').textContent = statusInfo.buttonText;
+        modal.querySelector('#actionReportId').value = reportId;
+        modal.querySelector('#actionName').value = action;
+        
+        const checklistContainer = modal.querySelector('#checklistContainer');
+        const checklistDiv = modal.querySelector('#actionCheckboxes');
+
+        const checklistOptions = CHECKLISTS_BY_STEP[action] ? (CHECKLISTS_BY_STEP[action][report.type] || CHECKLISTS_BY_STEP[action]['common'] || []) : [];
+        
+        if (checklistOptions.length > 0) {
+            checklistDiv.innerHTML = checklistOptions.map(option => 
+                `<label class="flex items-center text-sm"><input type="checkbox" value="${option}" class="rounded border-gray-300"><span class="ml-2 text-gray-700">${option}</span></label>`
+            ).join('');
+            checklistContainer.classList.remove('hidden');
+        } else {
+            checklistContainer.classList.add('hidden');
+        }
+
+        const evidenceInput = modal.querySelector('#actionEvidence');
+        evidenceInput.value = null;
+        const preview = modal.querySelector('#actionImagePreview');
+        preview.src = '';
+        preview.classList.add('hidden');
+        
+        const submitBtn = modal.querySelector('#actionSubmitBtn');
+        submitBtn.className = `px-4 py-2 rounded-lg ${statusInfo.buttonClass}`;
+        submitBtn.textContent = "ยืนยัน";
+        
+        modal.classList.remove('hidden');
+        document.getElementById('actionForm').onsubmit = handleActionSubmit;
+        evidenceInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) { preview.src = URL.createObjectURL(file); preview.classList.remove('hidden'); }
+        };
+    }
+    
+    async function handleActionSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const id = parseInt(form.querySelector('#actionReportId').value);
+        const action = form.querySelector('#actionName').value;
+        const report = reports.find(r => r.id === id);
+        if (!report) return;
+
+        const user = form.querySelector('#actionUser').value;
+        if (!user) { alert('กรุณากรอกชื่อผู้ดำเนินการ'); return; }
+
+        const notes = form.querySelector('#actionNotes').value;
+        const file = form.querySelector('#actionEvidence').files[0];
+        const checkedItems = getCheckedValues(form.querySelector('#actionCheckboxes'));
+        
+        let finalNotes = checkedItems.map(item => `- ${item}`).join('\n');
+        if (notes.trim()) {
+            finalNotes += (finalNotes ? '\n\n' : '') + `อื่นๆ: ${notes.trim()}`;
+        }
+        
+        if (!finalNotes && !file) {
+            alert('กรุณาเลือกรายการจาก Checklist, กรอกบันทึก หรือแนบหลักฐานอย่างน้อย 1 อย่าง');
+            return;
+        }
+        
+        if (action === 'Issued') {
+            report.actionPlan = finalNotes;
+        }
+
+        appDOMElements.modals.loading.classList.remove('hidden');
+        const evidence = file ? await compressImage(file) : null;
+        appDOMElements.modals.loading.classList.add('hidden');
+        
+        const nextStatusKey = STATUS_WORKFLOW[action].next;
+        report.status = nextStatusKey;
+        const historyActionText = STATUS_WORKFLOW[action].buttonText;
+
+        addHistory(report, historyActionText, user, finalNotes, evidence);
+        saveData();
+        renderBoard();
+        appDOMElements.modals.action.classList.add('hidden');
+    }
+
+    function openQaModal(id) {
+        const qaModal = appDOMElements.modals.qa;
+        const form = qaModal.querySelector('form');
+        form.reset();
+        qaModal.querySelector('#qaReportId').value = id;
+        qaModal.querySelector('#defectSection').style.display = 'none';
+        
+        const preview = qaModal.querySelector('#qaImagePreview');
+        preview.classList.add('hidden');
+        preview.src = '';
+        
+        qaModal.classList.remove('hidden');
+        form.onsubmit = handleQaSubmit;
+        
+        qaModal.querySelectorAll('input[name="qaResult"]').forEach(radio => {
+            radio.onchange = () => {
+                const defectSection = qaModal.querySelector('#defectSection');
+                defectSection.style.display = radio.value === 'NG' ? 'block' : 'none';
+            }
+        });
+
+        qaModal.querySelector('#qaEvidence').onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) { preview.src = URL.createObjectURL(file); preview.classList.remove('hidden'); }
+        };
+    }
+
+    async function handleQaSubmit(e) {
+        e.preventDefault();
+        const qaForm = e.target;
+        const id = parseInt(qaForm.querySelector('#qaReportId').value);
+        const report = reports.find(r => r.id === id);
+        if (!report) return;
+
+        const verifiedBy = qaForm.querySelector('#verifiedBy').value;
+        if(!verifiedBy) { alert('กรุณากรอกชื่อผู้ตรวจสอบ (QA)'); return; }
+        
+        const result = qaForm.qaResult.value;
+        const file = qaForm.querySelector('#qaEvidence').files[0];
+
+        if (result === 'OK' && !file) {
+            alert('สำหรับผล OK, กรุณาแนบรูปภาพหลักฐานยืนยัน');
+            return;
+        }
+            
+        appDOMElements.modals.loading.classList.remove('hidden');
+        const evidence = file ? await compressImage(file) : null;
+        appDOMElements.modals.loading.classList.add('hidden');
+        
+        report.qa = {
+            result: result,
+            defect: result === 'NG' ? qaForm.querySelector('#defectCode').value : null,
+            verifiedBy: verifiedBy,
+            timestamp: new Date().toISOString(),
+            evidence: evidence
+        };
+
+        if (result === 'NG') {
+            report.status = 'Planned'; // Go back to planning
+            addHistory(report, `4. Verified (NG - Rejected)`, verifiedBy, `ผล: NG, Defect: ${report.qa.defect}. ส่งกลับไปวางแผนใหม่`, evidence);
+            showNotification("ผลเป็น NG, ระบบจะส่งเคสกลับไปขั้นตอน '2. Planned' เพื่อทบทวนมาตรการ");
+        } else {
+            report.status = 'Verified'; // Proceed to closing
+            addHistory(report, `4. Verified (OK)`, verifiedBy, `ผล: OK`, evidence);
+        }
+        
+        notifyQaResult(report);
+        saveData();
+        renderBoard();
+        appDOMElements.modals.qa.classList.add('hidden');
+    }
+    
+    function showHistoryModal(e) {
+        const reportId = parseInt(e.currentTarget.dataset.id);
+        const report = reports.find(r => r.id === reportId);
+        if (!report) return;
+
+        const modal = appDOMElements.modals.history;
+        const historyContent = (report.history || []).slice().reverse().map(h => 
+            `<div class="border-b pb-2 mb-2">
+                <p><strong>${h.action}</strong> โดย ${h.user || 'N/A'}</p>
+                <p class="text-gray-500 text-xs">${new Date(h.timestamp).toLocaleString('th-TH')}</p>
+                ${h.notes ? `<p class="mt-1 text-gray-800 bg-gray-100 p-2 rounded text-sm whitespace-pre-wrap">${h.notes}</p>` : ''}
+                ${h.evidence ? `<a href="${h.evidence}" target="_blank" class="text-blue-600 hover:underline text-sm mt-1 inline-block">ดูหลักฐาน 📸</a>` : ''}
+            </div>`
+        ).join('');
+        modal.querySelector('#historyContent').innerHTML = historyContent || '<p class="text-center text-gray-500">ไม่มีประวัติ</p>';
+
+        modal.querySelector('#exportHistoryBtn').onclick = () => exportHistoryToExcel(reportId);
+        modal.classList.remove('hidden');
+    }
+
+    function openSettingsModal() {
+        document.getElementById('masterParts').value = (masterData.parts || []).join(', ');
+        document.getElementById('masterLines').value = (masterData.lines || []).join(', ');
+        document.getElementById('masterResponsibles').value = (masterData.responsibles || []).join(', ');
+        
+        document.getElementById('saveSettingsBtn').onclick = saveSettings;
+
+        appDOMElements.modals.settings.classList.remove('hidden');
+    }
+
+    function saveSettings() {
+        masterData.parts = document.getElementById('masterParts').value.split(',').map(s => s.trim()).filter(Boolean);
+        masterData.lines = document.getElementById('masterLines').value.split(',').map(s => s.trim()).filter(Boolean);
+        masterData.responsibles = document.getElementById('masterResponsibles').value.split(',').map(s => s.trim()).filter(Boolean);
+        
+        saveMasterData();
+        populateDatalists();
+        appDOMElements.modals.settings.classList.add('hidden');
+    }
+
+    function openExportModal() {
+        const form = appDOMElements.modals.export.querySelector('#exportForm');
+        form.innerHTML = Object.values(STATUS_WORKFLOW).filter(s => s.step).map(status => 
+            `<label class="flex items-center">
+                <input type="checkbox" name="exportStatus" value="${Object.keys(STATUS_WORKFLOW).find(key => STATUS_WORKFLOW[key] === status)}" class="rounded border-gray-300" checked> 
+                <span class="ml-2">${status.step}. ${status.text}</span>
+            </label>`
+        ).join('');
+        appDOMElements.modals.export.classList.remove('hidden');
+        document.getElementById('exportPdfBtn').onclick = generateBoardPdf;
+    }
+
+    // --- DYNAMIC UI HELPERS ---
+    function calculateRiskScore() {
+        let score = 0;
+        getCheckedValues(document.getElementById('reasonCheckboxes')).forEach(reason => {
+            score += (RISK_SCORES[reason] || 1);
+        });
+        document.getElementById('riskScoreDisplay').textContent = score;
+        return score;
+    }
+
+    function populateDatalists() {
+        if(document.getElementById('parts-list')) {
+            document.getElementById('parts-list').innerHTML = (masterData.parts || []).map(p => `<option value="${p}"></option>`).join('');
+            document.getElementById('lines-list').innerHTML = (masterData.lines || []).map(l => `<option value="${l}"></option>`).join('');
+            document.getElementById('responsibles-list').innerHTML = (masterData.responsibles || []).map(r => `<option value="${r}"></option>`).join('');
+        }
+    }
+
+    function populateStaticDropdowns() {
+        const statusFilter = document.querySelector('#filterStatus');
+        if (statusFilter) {
+            statusFilter.innerHTML = `<option value="">สถานะทั้งหมด</option>` + Object.keys(STATUS_WORKFLOW).filter(s => STATUS_WORKFLOW[s].step).map(sKey => `<option value="${sKey}">${STATUS_WORKFLOW[sKey].step}. ${STATUS_WORKFLOW[sKey].text}</option>`).join('');
+        }
+        const defectCodeSelect = document.getElementById('defectCode');
+        if(defectCodeSelect) {
+            defectCodeSelect.innerHTML = DEFECT_CODES.map(d => `<option value="${d}">${d}</option>`).join('');
+        }
+    }
+
+    function updateDynamicFormElements() {
+        const type = document.getElementById('changeType')?.value;
+        updateCheckboxes(document.getElementById('reasonCheckboxes'), REASONS_BY_TYPE[type] || []);
+    }
+    
+    function updateCheckboxes(container, options) {
+        if (!container) return;
+        container.innerHTML = options.length === 0 ? 
+            `<p class="text-gray-400 col-span-full">กรุณาเลือกประเภท 4M ก่อน</p>` : 
+            options.map((option) => `<label class="flex items-center text-sm"><input type="checkbox" value="${option}" class="rounded border-gray-300"><span class="ml-2 text-gray-700">${option}</span></label>`).join('');
+    }
+    
+    function getCheckedValues(container) {
+        if (!container) return [];
+        return Array.from(container.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+    }
+    
+    // --- NOTIFICATIONS & EXTERNAL ---
+    async function sendTelegramNotification(message, actionUrl = null) {
+        if (!TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) return;
+        const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+        const params = new URLSearchParams({ chat_id: TELEGRAM_CONFIG.CHAT_ID, text: message, parse_mode: 'Markdown' });
+        if (actionUrl) {
+            const antiCacheUrl = `${actionUrl}&t=${Date.now()}`;
+            params.append('reply_markup', JSON.stringify({
+                inline_keyboard: [[ { text: '📋 ดูบน 4M Board', url: antiCacheUrl } ]]
+            }));
+        }
+        try {
+            await fetch(`${url}?${params.toString()}`);
+        } catch (error) {
+            console.error('Error sending Telegram notification:', error);
+        }
+    }
+
+    function notifyNewCase(report) {
+        const riskEmoji = report.risk.level === 'High' ? '🚨' : (report.risk.level === 'Medium' ? '⚠️' : 'ℹ️');
+        const message = `${riskEmoji} *1. New 4M Change Issued*\n*Case ID:* \`${report.id}\`\n*Part:* ${report.partName}\n*Line:* ${report.line}\n*Risk:* ${report.risk.level} (${report.risk.score})\n--------------------------------------\n👤 *เรียน:* ${report.countermeasure.responsible} (หน.แผนก)\n👉 *โปรดดำเนินการขั้นต่อไป:* วางแผนมาตรการ`.trim();
+        sendTelegramNotification(message, `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}`);
+    }
+
+    function notifyQaResult(report) {
+        const resultEmoji = report.qa.result === 'OK' ? '✅' : '❌';
+        const resultText = report.qa.result === 'OK' ? 'OK' : 'NG - ส่งกลับไปวางแผนใหม่';
+        const message = `${resultEmoji} *4. QA Verification Result*\n*Case ID:* \`${report.id}\` (${report.partName})\n*Result:* *${resultText}*\n${report.qa.result === 'NG' ? `*Defect:* ${report.qa.defect}\n` : ''}*Verified by:* ${report.qa.verifiedBy}\n--------------------------------------\n👤 *เรียน:* ทุกท่านที่เกี่ยวข้อง\n👉 *โปรดดำเนินการขั้นต่อไปตามสถานะ*`.trim();
+        sendTelegramNotification(message, `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}`);
+    }
+
+    function notifyReminder(reportId) {
+        const report = reports.find(r => r.id === reportId);
+        if (!report || !confirm(`ต้องการส่งแจ้งเตือนสำหรับเคส #${report.id} (${report.partName}) หรือไม่?`)) return;
+        
+        const statusInfo = STATUS_WORKFLOW[report.status];
+        const message = `🔔 *Reminder: 4M Change*\n*Case ID:* \`${report.id}\` (${report.partName})\n*Current Status:* ${statusInfo.step}. ${statusInfo.text}\n--------------------------------------\n👉 *โปรดดำเนินการ:* ${statusInfo.guidance} (โดย ${statusInfo.role})`.trim();
+        sendTelegramNotification(message, `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}`);
+        showNotification('ส่งแจ้งเตือนสำเร็จ!');
+    }
+    
+    function showNotification(message) {
+        alert(message);
+    }
+
+    // --- UTILITIES & EXPORTS ---
+    function compressImage(file, maxWidth = 1024, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const scale = Math.min(1, maxWidth / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(ctx.canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function generateBoardPdf() {
+        appDOMElements.modals.export.classList.add('hidden');
+        appDOMElements.modals.loading.classList.remove('hidden');
+        const selectedStatuses = getCheckedValues(document.getElementById('exportForm'));
+        const reportsToExport = reports.filter(r => selectedStatuses.includes(r.status));
+        if (reportsToExport.length === 0) {
+            showNotification('ไม่พบการ์ดตามสถานะที่เลือก');
+            appDOMElements.modals.loading.classList.add('hidden');
+            return;
+        }
+        const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        const cardWidth = 190;
+        let yPos = 10;
+        for (const report of reportsToExport) {
+            const cardElement = createReportCard(report); 
+            document.body.appendChild(cardElement); 
+            const canvas = await html2canvas(cardElement, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const cardHeight = (canvas.height * cardWidth) / canvas.width;
+            if (yPos + cardHeight > 287) { doc.addPage(); yPos = 10; }
+            doc.addImage(imgData, 'PNG', 10, yPos, cardWidth, cardHeight);
+            yPos += cardHeight + 5;
+            document.body.removeChild(cardElement);
+        }
+        doc.save(`4M_Board_Export_${new Date().toISOString().slice(0, 10)}.pdf`);
+        appDOMElements.modals.loading.classList.add('hidden');
+    }
+
+    async function exportCardAsPng(e) {
+        const id = e.currentTarget.dataset.id;
+        const cardElement = document.getElementById(`report-card-${id}`);
+        if(cardElement) {
+            appDOMElements.modals.loading.classList.remove('hidden');
+            try {
+                const canvas = await html2canvas(cardElement, { scale: 3, useCORS: true, logging: false });
+                const link = document.createElement('a');
+                link.download = `4M-Card-${id}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error("Error exporting card as PNG:", err);
+                showNotification("เกิดข้อผิดพลาดในการ Export รูปภาพ");
+            } finally {
+                appDOMElements.modals.loading.classList.add('hidden');
+            }
+        }
+    }
+    
+    function exportToExcel() {
+        if (reports.length === 0) { showNotification('ไม่มีข้อมูลสำหรับ Export'); return; }
+        const dataForExport = reports.map(report => ({
+            'Case ID': report.id, 'วันที่สร้าง': new Date(report.timestamp).toLocaleString('th-TH'), 'ประเภท 4M': report.type, 'ไลน์ผลิต': report.line, 'ชื่อชิ้นงาน': report.partName, 'เอกสารควบคุม': report.docNumber || '', 'ผู้รายงาน': report.reporter, 'เหตุผลการเปลี่ยนแปลง': report.reason, 'ระดับความเสี่ยง': report.risk.level, 'คะแนนความเสี่ยง': report.risk.score, 'แผนมาตรการ': report.actionPlan || '', 'ผู้รับผิดชอบหลัก': report.countermeasure.responsible, 'กำหนดเสร็จ': new Date(report.countermeasure.dueDate).toLocaleDateString('th-TH'), 'สถานะ': `${STATUS_WORKFLOW[report.status].step}. ${STATUS_WORKFLOW[report.status].text}`, 'ผล QA': report.qa.result || '', 'ผู้ตรวจสอบ (QA)': report.qa.verifiedBy || '', 'รหัสของเสีย': report.qa.defect || '', 'วันที่ตรวจสอบ QA': report.qa.timestamp ? new Date(report.qa.timestamp).toLocaleString('th-TH') : ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(dataForExport);
+        const header = Object.keys(dataForExport[0]);
+        ws['!cols'] = header.map(h => ({ wch: dataForExport.reduce((w, r) => Math.max(w, r[h] ? String(r[h]).length : 0), h.length) + 5 }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '4M_Reports');
+        XLSX.writeFile(wb, `4M_Data_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    function exportHistoryToExcel(reportId) {
+        const report = reports.find(r => r.id === reportId);
+        if (!report || !report.history || report.history.length === 0) { showNotification('ไม่มีประวัติสำหรับ Export'); return; }
+        const dataForExport = report.history.map(h => ({ 'Timestamp': new Date(h.timestamp).toLocaleString('th-TH'), 'Action': h.action, 'User': h.user, 'Notes': h.notes || '', 'Evidence': h.evidence ? 'Yes' : 'No' }));
+        const ws = XLSX.utils.json_to_sheet(dataForExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `History_Case_${reportId}`);
+        XLSX.writeFile(wb, `M_History_Case_${reportId}.xlsx`);
+    }
+
+    // --- DASHBOARD ---
+    function renderDashboard() {
+        const container = document.getElementById('view-container');
+        if(reports.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-10"><i class="w-16 h-16 mx-auto text-gray-400" data-feather="bar-chart-2"></i><span class="mt-4 block">ยังไม่มีข้อมูลสำหรับแสดงผล</span></p>';
+            feather.replace();
+            return;
+        }
+        
+        const reasonCounts = reports.flatMap(r => r.reason.split('; ').filter(reason => !reason.startsWith('รายละเอียด:'))).reduce((acc, reason) => { acc[reason] = (acc[reason] || 0) + 1; return acc; }, {});
+        const top5Reasons = Object.entries(reasonCounts).sort(([,a],[,b]) => b-a).slice(0, 5);
+        createChart('reasonsChart', 'bar', top5Reasons.map(item => item[0]), top5Reasons.map(item => item[1]), 'จำนวนครั้ง');
+        
+        const typeCounts = reports.reduce((acc, r) => { acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
+        createChart('typesChart', 'pie', Object.keys(typeCounts), Object.values(typeCounts));
+        
+        const lineCounts = reports.reduce((acc, r) => { acc[r.line] = (acc[r.line] || 0) + 1; return acc; }, {});
+        const top5Lines = Object.entries(lineCounts).sort(([,a],[,b]) => b-a).slice(0, 5);
+        createChart('linesChart', 'bar', top5Lines.map(item => item[0]), top5Lines.map(item => item[1]), 'จำนวนครั้ง');
+        
+        const defectCounts = reports.filter(r => r.qa.result === 'NG' && r.qa.defect && r.qa.defect !== 'ไม่มี').reduce((acc, r) => { acc[r.qa.defect] = (acc[r.qa.defect] || 0) + 1; return acc; }, {});
+        createChart('defectsChart', 'bar', Object.keys(defectCounts), Object.values(defectCounts), 'จำนวนครั้ง');
+    }
+    
+    function createChart(canvasId, type, labels, data, label) {
+        const ctx = document.getElementById(canvasId)?.getContext('2d');
+        if (!ctx) return;
+        
+        if(appDOMElements.charts && appDOMElements.charts[canvasId]) appDOMElements.charts[canvasId].destroy();
+        if(!appDOMElements.charts) appDOMElements.charts = {};
+        
+        appDOMElements.charts[canvasId] = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#6b7280', '#ec4899', '#6366f1']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: type === 'pie' } }
+            }
+        });
+    }
+    
+    // --- INITIALIZE APP ---
+    init();
+});
+</script>
+</body>
+</html>

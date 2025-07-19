@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4M Cloud System v28.1 (Final & Verified)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.0.18/24/solid/css/heroicons.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        .tab-button.active { border-bottom-color: #2563eb; color: #2563eb; font-weight: 600; }
+        .risk-high { background-color: #fee2e2; color: #b91c1c; } .risk-medium { background-color: #fef3c7; color: #b45309; } .risk-low { background-color: #dcfce7; color: #166534; }
+        .status-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+        .card-highlight { animation: highlight-animation 2.5s ease-out; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.7); border-radius: 0.5rem; }
+        @keyframes highlight-animation { 0% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.9); transform: scale(1.02); } 70% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); transform: scale(1); } 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0); } }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .progress-bar { display: flex; justify-content: space-between; align-items: center; position: relative; width: 100%; margin: 1rem 0; }
+        .progress-bar::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background-color: #e5e7eb; transform: translateY(-50%); z-index: 1; }
+        .step-item { display: flex; flex-direction: column; align-items: center; z-index: 2; position: relative; width: 25%; }
+        .step-icon { width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: white; border: 2px solid; transition: all 0.3s ease; }
+        .step-label { font-size: 0.65rem; color: #6b7280; margin-top: 0.25rem; text-align: center; }
+        .step-item.completed .step-icon { border-color: #2563eb; background-color: #2563eb; color: white; }
+        .step-item.completed .step-label { color: #1e40af; font-weight: 600; }
+        .step-item.active .step-icon { border-color: #2563eb; background-color: #dbeafe; color: #1e40af; animation: pulse-active 2s infinite; }
+        .step-item.active .step-label { color: #1e40af; font-weight: 700; }
+        @keyframes pulse-active { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .step-item.pending .step-icon { border-color: #d1d5db; background-color: #f3f4f6; color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<div id="app" class="container mx-auto max-w-7xl p-2 sm:p-4">
+    <header class="bg-white shadow-md rounded-lg p-4 mb-4"><div class="flex justify-between items-center"><div class="flex items-center space-x-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-600"><path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" /><path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.342 1.374a3.026 3.026 0 01.64 2.288V17.5c0 .713-.388 1.354-.99 1.731a6.01 6.01 0 01-1.642.705 49.52 49.52 0 01-5.312 0 6.01 6.01 0 01-1.642-.705A2.25 2.25 0 013.75 17.5V6.733c0-.713.388-1.354.99-1.731a6.01 6.01 0 011.642-.705zM12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg><div><h1 class="text-xl sm:text-2xl font-bold text-gray-800">4M Cloud System v28.1</h1><p class="text-sm text-gray-500">Powered by Firebase</p></div></div><div class="flex items-center space-x-2"><button id="exportBoardBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Export Board to PDF"><i data-feather="image"></i></button><button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Export Data to Excel"><i data-feather="file-text"></i></button><button id="settingsBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm" title="Settings"><i data-feather="settings"></i></button></div></div></header>
+    <nav class="bg-white rounded-t-lg shadow"><div class="flex border-b"><button data-view="form" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent active"><i class="w-5 h-5 inline-block" data-feather="edit"></i> <span>บันทึก 4M</span></button><button data-view="board" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent"><i class="w-5 h-5 inline-block" data-feather="grid"></i> <span>4M Board</span></button><button data-view="dashboard" class="tab-button flex-1 py-3 px-2 text-center text-gray-600 border-b-4 border-transparent"><i class="w-5 h-5 inline-block" data-feather="bar-chart-2"></i> <span>Dashboard</span></button></div></nav>
+    <main class="bg-white shadow-md rounded-b-lg p-4 sm:p-6 min-h-[60vh]"><div id="view-container"></div></main>
+</div>
+<div id="modal-container"></div>
+
+<!-- SDKs and feather icons -->
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURATION ---
+    const { jsPDF } = window.jspdf;
+    const TELEGRAM_CONFIG = {
+        BOT_TOKEN: '7698218579:AAHb0vK959U_IXbRBYEmaXBGIxP3IsKn3uo',
+        CHAT_ID: '7956717161',
+        BASE_URL: window.location.href.split('?')[0]
+    };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHsbK8H7m-kbGHtCSNaRM4gW27AxvK9QE",
+      authDomain: "my-4m-tspt1.firebaseapp.com",
+      projectId: "my-4m-tspt1",
+      storageBucket: "my-4m-tspt1.appspot.com",
+      messagingSenderId: "903519514216",
+      appId: "1:903519514216:web:64be72c24878de633295dd",
+      measurementId: "G-W4RB3XVES3"
+    };
+
+    // --- INITIALIZE FIREBASE & APP STATE ---
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const reportsCollection = db.collection('reports');
+    const masterDataDoc = db.collection('config').doc('masterData');
+    
+    let reports = [];
+    let masterData = { parts: [], lines: [], responsibles: [] };
+    let appDOMElements = {};
+    let highlightedReportId = null; 
+    let isHighlighting = false;
+    let unsubscribe;
+
+    // --- TEMPLATES ---
+    const TPL = {
+        form: `<form id="changeForm" class="space-y-6"><input type="hidden" id="reportId"><div class="border-l-4 border-blue-500 p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-4">1. ข้อมูลพื้นฐาน</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label for="changeType" class="block text-sm font-medium text-gray-700">ประเภท 4M</label><select id="changeType" required class="mt-1 block w-full rounded-md border-gray-300"><option value="">-- เลือกประเภท --</option><option value="Man">Man</option><option value="Machine">Machine</option><option value="Material">Material</option><option value="Method">Method</option></select></div><div><label for="docNumber" class="block text-sm font-medium text-gray-700">เอกสารควบคุม (ถ้ามี)</label><input type="text" id="docNumber" placeholder="เช่น WI-PR-001" class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="changeLine" class="block text-sm font-medium text-gray-700">ไลน์การผลิต</label><input list="lines-list" type="text" id="changeLine" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="lines-list"></datalist></div><div><label for="partName" class="block text-sm font-medium text-gray-700">ชื่อชิ้นงาน</label><input list="parts-list" type="text" id="partName" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="parts-list"></datalist></div><div class="sm:col-span-2"><label for="reporterName" class="block text-sm font-medium text-gray-700">ชื่อผู้รายงาน</label><input type="text" id="reporterName" required placeholder="เช่น สมชาย ใจดี" class="mt-1 block w-full rounded-md border-gray-300"></div></div></div><div class="border-l-4 border-yellow-500 p-4 rounded-r-lg bg-gray-50"><div class="flex justify-between items-center mb-2"><h3 class="text-lg font-semibold text-gray-700">2. เหตุผลการเปลี่ยนแปลง</h3><div class="text-right"><p class="text-sm text-gray-500">คะแนนความเสี่ยง</p><p id="riskScoreDisplay" class="font-bold text-xl text-yellow-600">0</p></div></div><p class="text-sm text-gray-500 mb-4">เลือกสาเหตุ (ระบบจะคำนวณความเสี่ยงอัตโนมัติ)</p><div id="reasonCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4"><p class="text-gray-400 col-span-full">กรุณาเลือกประเภท 4M ก่อน</p></div><div><label for="otherReason" class="block text-sm font-medium text-gray-700">รายละเอียดเพิ่มเติม</label><textarea id="otherReason" rows="2" class="mt-1 block w-full rounded-md border-gray-300" placeholder="อธิบายเพิ่มเติม..."></textarea></div></div><div class="border-l-4 border-green-500 p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-2">3. มาตรการตอบโต้ และผู้รับผิดชอบ</h3><p class="text-sm font-medium text-gray-700 mb-2">มาตรการตอบโต้หลัก (เลือกได้หลายข้อ)</p><div id="mainCountermeasuresCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4"><p class="text-gray-400 col-span-full">กรุณาเลือกประเภท 4M ก่อน</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4"><div><label for="responsible" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบหลัก</label><input list="responsibles-list" type="text" id="responsible" required placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full rounded-md border-gray-300"><datalist id="responsibles-list"></datalist></div></div></div><div class="border-l-4 border-purple-500 p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-2">4. มาตรการเฝ้าระวังเพิ่มเติม</h3><p class="text-sm text-gray-500 mb-4">เลือกมาตรการสำหรับควบคุมและเฝ้าระวังคุณภาพหลังการเปลี่ยนแปลง (เลือกได้หลายข้อ)</p><div id="surveillanceMeasuresCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div><div class="flex items-center space-x-2 sm:col-span-2 mt-2 pt-2 border-t"><label for="surveillanceOtherCheckbox" class="flex items-center text-sm flex-shrink-0"><input type="checkbox" id="surveillanceOtherCheckbox" class="rounded border-gray-300"><span class="ml-2 text-gray-700">อื่นๆ (โปรดระบุ):</span></label><input type="text" id="surveillanceOtherText" class="hidden flex-grow rounded-md border-gray-300 text-sm" placeholder="ระบุมาตรการเพิ่มเติม..."></div></div><div class="border-l-4 border-red-500 p-4 rounded-r-lg bg-gray-50"><h3 class="text-lg font-semibold text-gray-700 mb-2">5. หลักฐานการเปิดเคส (จำเป็น)</h3><div><label for="initialEvidence" class="block text-sm font-medium text-gray-700">แนบรูปภาพหลักฐาน เช่น เอกสาร OJT, ผล Job Observation</label><input type="file" id="initialEvidence" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="initialImagePreview" class="hidden mt-2 max-h-48 rounded"></div></div><div class="pt-4 mt-4 border-t"><button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center space-x-2"><i class="w-6 h-6" data-feather="save"></i><span>บันทึก / อัปเดต</span></button></div></form>`,
+        board: `<div class="bg-gray-50 p-4 rounded-lg mb-4 border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"><div><label for="filterText" class="block text-sm text-gray-700">ค้นหา (ID, ไลน์, ชิ้นงาน...)</label><input type="text" id="filterText" class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="filterStatus" class="block text-sm text-gray-700">สถานะ</label><select id="filterStatus" class="mt-1 block w-full rounded-md border-gray-300"><option value="">ทั้งหมด</option></select></div><div><label for="filterRisk" class="block text-sm text-gray-700">ความเสี่ยง</label><select id="filterRisk" class="mt-1 block w-full rounded-md border-gray-300"><option value="">ทั้งหมด</option><option value="High">สูง</option><option value="Medium">ปานกลาง</option><option value="Low">ต่ำ</option></select></div><div class="flex items-end"><button id="clearFiltersBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm w-full"><i data-feather="x-circle" class="w-4 h-4"></i><span>ล้างตัวกรอง</span></button></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"><div id="board-Man" class="bg-blue-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-blue-800 mb-3 text-center">MAN</h2><div class="space-y-3"></div></div><div id="board-Machine" class="bg-yellow-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-yellow-800 mb-3 text-center">MACHINE</h2><div class="space-y-3"></div></div><div id="board-Material" class="bg-green-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-green-800 mb-3 text-center">MATERIAL</h2><div class="space-y-3"></div></div><div id="board-Method" class="bg-purple-50 p-3 rounded-lg"><h2 class="text-xl font-bold text-purple-800 mb-3 text-center">METHOD</h2><div class="space-y-3"></div></div></div><div id="no-data-message" class="hidden text-center text-gray-500 py-10"><i class="w-16 h-16 mx-auto text-gray-400" data-feather="folder-off"></i><p class="mt-4 text-lg">ไม่พบข้อมูล หรือกำลังโหลด...</p></div>`,
+        dashboard: `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Top 5 Change Reasons</h3><canvas id="reasonsChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">4M Change Ratio</h3><canvas id="typesChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Top 5 Production Lines</h3><canvas id="linesChart"></canvas></div><div class="bg-gray-50 p-4 rounded-lg shadow"><h3 class="font-bold text-gray-700 text-center mb-2">Defects from 4M Change</h3><canvas id="defectsChart"></canvas></div></div>`,
+        modals: `
+            <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-[100]"><div class="flex flex-col items-center text-center"><div class="spinner"></div><p id="loadingText" class="text-white text-lg mt-4">กำลังดำเนินการ...</p><p id="loadingProgress" class="text-white text-xl font-bold mt-1"></p></div></div>
+            <div id="actionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]"><div class="p-4 border-b"><h3 id="actionModalTitle" class="text-lg font-bold">Action</h3></div><form id="actionForm" class="p-4 space-y-4 flex-grow overflow-y-auto"><input type="hidden" id="actionReportId"><input type="hidden" id="actionName"><div class="space-y-4"><div id="deptHeadActionSection" class="hidden space-y-2"><label class="block text-sm font-medium text-gray-700">การดำเนินการโดย หน.แผนก</label><div id="deptHeadCheckboxes" class="grid grid-cols-1 gap-2 border rounded-md p-2 bg-gray-50"></div></div><div id="sectionHeadActionSection" class="hidden space-y-2"><label class="block text-sm font-medium text-gray-700">การดำเนินการโดย หน.ส่วน</label><div id="sectionHeadCheckboxes" class="grid grid-cols-1 gap-2 border rounded-md p-2 bg-gray-50"></div></div><div id="groupLeaderActionSection" class="hidden space-y-2"><label class="block text-sm font-medium text-gray-700">การยืนยันโดย หัวหน้ากลุ่ม</label><div id="groupLeaderCheckboxes" class="grid grid-cols-1 gap-2 border rounded-md p-2 bg-gray-50"></div></div><div><label for="actionUser" class="block text-sm font-medium text-gray-700">ชื่อผู้ดำเนินการ</label><input type="text" id="actionUser" required class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="actionNotes" class="block text-sm font-medium text-gray-700">บันทึกเพิ่มเติม</label><textarea id="actionNotes" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="actionEvidence" class="block text-sm font-medium text-gray-700">แนบหลักฐาน <span class="text-red-600 font-bold">*จำเป็น</span></label><input type="file" id="actionEvidence" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="actionImagePreview" class="hidden mt-2 max-h-40 rounded"></div></div></form><div class="p-4 bg-gray-50 border-t flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="submit" form="actionForm" id="actionSubmitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">ยืนยัน</button></div></div></div>
+            <div id="qaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]"><div class="p-4 border-b"><h3 class="text-lg font-bold">บันทึกผลตรวจสอบ (QA)</h3></div><form id="qaForm" class="p-4 space-y-4 flex-grow overflow-y-auto"><input type="hidden" id="qaReportId"><div class="space-y-4"><div><label class="block text-sm font-medium text-gray-700">ผลการตรวจสอบ</label><div class="flex items-center space-x-4 mt-1"><label class="flex items-center"><input type="radio" name="qaResult" value="OK" class="text-green-600" required><span class="ml-2 text-green-700 font-semibold">OK</span></label><label class="flex items-center"><input type="radio" name="qaResult" value="NG" class="text-red-600"><span class="ml-2 text-red-700 font-semibold">NG</span></label></div></div><div id="defectSection" class="hidden"><label for="defectCode" class="block text-sm font-medium text-gray-700">รหัสของเสีย</label><select id="defectCode" class="mt-1 block w-full rounded-md border-gray-300"></select></div><div><label for="verifiedBy" class="block text-sm font-medium text-gray-700">ชื่อผู้ตรวจสอบ (QA)</label><input type="text" id="verifiedBy" required class="mt-1 block w-full rounded-md border-gray-300"></div><div><label for="qaEvidence" class="block text-sm font-medium text-gray-700">แนบหลักฐาน <span class="text-red-600 font-bold">*จำเป็น</span></label><input type="file" id="qaEvidence" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="qaImagePreview" class="hidden mt-2 max-h-40 rounded"></div></div></form><div class="p-4 bg-gray-50 border-t flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="submit" form="qaForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg">ยืนยันผล</button></div></div></div>
+            <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><h3 class="text-lg font-bold mb-4">ตั้งค่า Master Data</h3><form id="settingsForm" class="space-y-4"><div><label for="masterParts" class="block text-sm font-medium text-gray-700">รายชื่อชิ้นงาน (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterParts" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="masterLines" class="block text-sm font-medium text-gray-700">ไลน์ผลิต (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterLines" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div><div><label for="masterResponsibles" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบ (คั่นด้วยลูกน้ำ ,)</label><textarea id="masterResponsibles" rows="3" class="mt-1 block w-full rounded-md border-gray-300"></textarea></div></form><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ปิด</button><button type="button" id="saveSettingsBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">บันทึกค่า</button></div></div></div>
+            <div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold">ประวัติการดำเนินการ</h3><div><button id="exportHistoryBtn" class="bg-green-100 text-green-800 text-xs font-semibold py-1 px-2 rounded-md hover:bg-green-200 flex items-center space-x-1"><i data-feather="download" class="w-3 h-3"></i><span>Export</span></button></div></div><div id="historyContent" class="text-sm space-y-3 max-h-80 overflow-y-auto"></div><div class="mt-4 flex justify-end"><button type="button" class="modal-close-btn text-gray-500 hover:text-gray-700">ปิด</button></div></div></div>
+            <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"><h3 class="text-lg font-bold mb-4">Export Board เป็น PDF</h3><p class="text-sm text-gray-600 mb-4">เลือกสถานะ</p><form id="exportForm" class="space-y-2"></form><div class="mt-6 flex justify-end space-x-3"><button type="button" class="modal-close-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">ยกเลิก</button><button type="button" id="exportPdfBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Export</button></div></div></div>
+        `
+    };
+
+    // --- STATIC DATA ---
+    const REASONS_BY_TYPE = {'Man':['พนักงานใหม่','พนักงานขาดงาน/ลา','สลับตำแหน่ง/หน้าที่','หัวหน้างานใหม่','พนักงานทักษะไม่พอ','ลดจำนวนคนในไลน์','เพิ่มกะ/คนทำงาน','เปลี่ยน Job Leader','ไม่ปฏิบัติตาม WI','ความเหนื่อยล้า/สุขภาพ'],'Machine':['เปลี่ยนแม่พิมพ์ (Mold)','เครื่องจักร Breakdown','เปลี่ยน Parameter ฉีด','ซ่อมบำรุงฉุกเฉิน','เปลี่ยน Jig/Fixture','ติดตั้งเครื่องจักรใหม่','ระบบไฟฟ้า/ลมอัดขัดข้อง','เครื่องมือวัดเสีย/ไม่ Calibrate','เปลี่ยน Robot Program','Cooling System มีปัญหา'],'Material':['เปลี่ยน Lot วัตถุดิบ','เปลี่ยนเกรด/Supplier','ใช้วัสดุทดแทน','วัตถุดิบหมดสต็อก','วัตถุดิบ Spec ไม่ตรง','เปลี่ยนสี/Masterbatch','เปลี่ยน Packaging','วัตถุดิบมีความชื้นสูง','ใช้ Re-grind material','ส่วนผสม/อัตราส่วนผิด'],'Method':['เปลี่ยน Work Instruction (WI)','ลด/เพิ่ม Cycle Time','เพิ่ม/ลดขั้นตอนทำงาน','เปลี่ยน Layout การผลิต','ทดลองงานใหม่ (Trial)','เปลี่ยนวิธีการตรวจสอบ','เปลี่ยนวิธีการPacking','ปรับปรุง Kaizen','ทำงานไม่ตามขั้นตอน','วิธีการ Set up เปลี่ยนไป']};
+    const COUNTERMEASURES_BY_TYPE = {'Man':['หยุดไลน์และแจ้งหัวหน้า','เปลี่ยนคนมีทักษะมาทำแทน','หัวหน้างานสอนและควบคุม','ตรวจสอบ 100% ท้ายไลน์','จัดทำ OPL สอนงานด่วน','วิศวกร/เทคนิคเชี่ยนยืนยัน','บันทึกประวัติการอบรม','ทำงานคู่กับคนเก่า','จัดอบรมซ้ำ','Job Observation (เฝ้าดูการทำงาน)'],'Machine':['หยุดเครื่องและแจ้งซ่อม','วิศวกรยืนยัน Parameter','ตรวจสอบ First-off 5 ชิ้น','เฝ้าระวังเครื่องจักรพิเศษ','เพิ่มความถี่ตรวจชิ้นงาน','แยก Lot ที่ได้รับผลกระทบ','ห้ามปรับ Parameter','ตรวจ Calibrate เครื่องมือวัด','ทำความสะอาดแม่พิมพ์/เครื่อง','บันทึกประวัติซ่อม'],'Material':['หยุดใช้วัสดุดิบที่มีปัญหา','ส่ง QA ตรวจสอบ','Trial run วัตถุดิบใหม่','แยก/ติดป้าย Lot ใหม่','ติดต่อ Supplier ยืนยัน Spec','อบไล่ความชื้นก่อนใช้','ตรวจสอบย้อนกลับ Lot ที่ใช้','ตรวจสอบสี/ลักษณะกายภาพ','ขอเอกสาร CoA','กักกันสินค้าต้องสงสัย'],'Method':['หยุดไลน์ทบทวน WI','ออก WI ชั่วคราว','QA ยืนยันคุณภาพก่อนเดินงาน','สื่อสารการเปลี่ยนแปลงทั่วถึง','วิศวกรยืนยันการเปลี่ยนแปลง','บันทึกใน Log Book','Audit กระบวนการหลังเปลี่ยน','ตรวจ First/Last Piece','กำหนดจุดตรวจสอบพิเศษ','ทบทวน FMEA/Control Plan']};
+    const SURVEILLANCE_MEASURES = ['ติดป้ายเหลือง \'4M Change\' ที่กล่อง/Rack และแจ้ง QA','พนักงานตรวจสอบชิ้นงาน 100% ก่อนลงกล่อง','แยก Lot การผลิต 3 ชั่วโมงแรกเพื่อรอผล QA','วิศวกร/เทคนิคเชี่ยนตรวจสอบ Parameter ซ้ำใน 1 ชม.','บันทึกข้อมูลในใบบันทึกการควบคุมพิเศษ','เก็บตัวอย่าง First Shot / Last Shot ของแต่ละกะ','ถ่ายรูปชิ้นงาน OK/NG ติดไว้ที่หน้าเครื่อง','สื่อสารการเปลี่ยนแปลงให้พนักงานกะต่อไปรับทราบ','ห้ามส่งมอบงานให้คลังสินค้าจนกว่าจะได้รับอนุมัติ','เพิ่มความถี่ในการตรวจสอบด้วยเครื่องมือวัด','หัวหน้ากลุ่ม สุ่มตรวจ 5 set ทุก 2 ชม.'];
+    const RISK_SCORES = {'พนักงานใหม่':3,'พนักงานทักษะไม่พอ':4,'เครื่องจักร Breakdown':5,'ซ่อมบำรุงฉุกเฉิน':5,'เปลี่ยนเกรด/Supplier':4,'วัตถุดิบ Spec ไม่ตรง':4,'วัตถุดิบปนเปื้อน':5,'ทดลองงานใหม่ (Trial)':4};
+    const DEFECT_CODES = ['ไม่มี','รอยบุบ (Dent)','รอยขีดข่วน (Scratch)','แฟลช (Flash)','ฉีดไม่เต็ม (Short Shot)','รอยยุบ (Sink Mark)','สีเพี้ยน (Color Mismatch)','สิ่งปนเปื้อน (Contamination)','ขนาดผิด Spec (Dimension NG)','อื่นๆ'];
+    const DEPT_HEAD_ACTIONS = ['รับทราบและยืนยันปัญหา','มอบหมายให้ หน.ส่วน ดำเนินการต่อ','สั่งการให้ควบคุมพื้นที่/ชิ้นงานทันที (Containment)','กำหนดเป็นเคสเร่งด่วน (Urgent)','ต้องการข้อมูล/หลักฐานเพิ่มเติม'];
+    const SECTION_HEAD_ACTIONS = ['ดำเนินการแก้ไขตามมาตรการแล้ว','จัดให้มีการเฝ้าระวังพิเศษ (Surveillance)','ปรับปรุง/แก้ไขเอกสาร WI/มาตรฐานแล้ว','อบรมพนักงานที่เกี่ยวข้องแล้ว','ตรวจสอบการแยก Lot/ชิ้นงานเรียบร้อย'];
+    const GROUP_LEADER_CLOSURE_ACTIONS = ['สุ่มตรวจสอบซ้ำ 2 รอบ ผลเป็นปกติ','ยืนยันว่าปัญหานี้ได้รับการแก้ไขถาวรแล้ว','เฝ้าระวังครบกำหนด ไม่พบปัญหาเพิ่มเติม','สรุปบทเรียนและแชร์ในทีม (Lesson Learned)','สื่อสารการเปลี่ยนแปลงให้ทุกกะรับทราบ'];
+    const STATUS_WORKFLOW = {'Open':{step:1,text:'Open',role:'หน.แผนก',guidance:'รับทราบและสั่งการ',badgeClass:'bg-gray-400 text-white',buttonClass:'bg-gray-500 hover:bg-gray-600 text-white',next:'Acknowledged',buttonText:'รับทราบปัญหา'},'Acknowledged':{step:2,text:'รับทราบแล้ว',role:'หน.ส่วน',guidance:'บันทึกการดำเนินการแก้ไข',badgeClass:'bg-yellow-500 text-white',buttonClass:'bg-yellow-400 hover:bg-yellow-500 text-neutral-800',next:'Action Taken',buttonText:'บันทึกการดำเนินการ'},'Action Taken':{step:3,text:'ดำเนินการแล้ว',role:'QA',guidance:'ตรวจสอบคุณภาพชิ้นงาน',badgeClass:'bg-blue-500 text-white',buttonClass:'bg-blue-600 hover:bg-blue-700 text-white',next:'Verified',buttonText:'ตรวจสอบผล (QA)'},'Verified':{step:4,text:'ตรวจสอบแล้ว',role:'หัวหน้ากลุ่ม',guidance:'ยืนยันผลและปิดเคส',badgeClass:'bg-indigo-500 text-white',buttonClass:'bg-green-600 hover:bg-green-700 text-white',next:'Closed',buttonText:'ปิดงาน'},'Closed':{step:5,text:'Closed',role:'',guidance:'',badgeClass:'bg-green-600 text-white',buttonClass:null,next:null,buttonText:null}};
+
+    // --- CORE FUNCTIONS ---
+    function init() {
+        document.getElementById('modal-container').innerHTML = TPL.modals;
+        initializeDomElements();
+        loadMasterData();
+        setupEventListeners();
+        listenForRealtimeUpdates();
+
+        const params = new URLSearchParams(window.location.search);
+        const highlightId = params.get('highlight');
+        let initialView = 'board';
+        if (highlightId) {
+            isHighlighting = true;
+            highlightedReportId = highlightId;
+            const cleanUrl = new URL(window.location);
+            cleanUrl.searchParams.delete('highlight');
+            cleanUrl.searchParams.delete('t');
+            history.replaceState(null, '', cleanUrl.toString());
+        } else {
+            const view = params.get('view');
+            if (view && TPL[view]) initialView = view;
+        }
+        switchView(initialView);
+    }
+
+    function switchView(viewName) {
+        appDOMElements.tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewName));
+        appDOMElements.viewContainer.innerHTML = TPL[viewName] || '<p>View not found</p>';
+        setupViewEventListeners(viewName);
+        if (viewName === 'form') { populateDatalists(); updateDynamicFormElements(); }
+        else if (viewName === 'board') { populateStaticDropdowns(); renderBoard(); }
+        else if (viewName === 'dashboard') { renderDashboard(); }
+        feather.replace();
+    }
+
+    // --- FIREBASE DATA HANDLING ---
+    function listenForRealtimeUpdates() {
+        if (unsubscribe) unsubscribe();
+        unsubscribe = reportsCollection.orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const currentView = document.querySelector('.tab-button.active')?.dataset.view;
+            if (currentView === 'board') renderBoard();
+            else if (currentView === 'dashboard') renderDashboard();
+        }, error => {
+            console.error("Error listening to real-time updates: ", error);
+            showNotification("ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาลองอีกครั้ง", true);
+        });
+    }
+
+    async function loadMasterData() {
+        try {
+            const doc = await masterDataDoc.get();
+            if (doc.exists) {
+                masterData = doc.data();
+            } else {
+                await masterDataDoc.set({ parts: [], lines: [], responsibles: [] });
+            }
+            populateDatalists();
+        } catch (e) {
+            console.error("Error loading master data: ", e);
+            masterData = { parts: [], lines: [], responsibles: [] };
+        }
+    }
+
+    async function saveMasterData() {
+        try {
+            showLoading('กำลังบันทึก Master Data...');
+            await masterDataDoc.set(masterData);
+            hideLoading();
+            showNotification('บันทึก Master Data สำเร็จ!');
+        } catch (e) {
+            hideLoading();
+            showNotification('เกิดข้อผิดพลาดในการบันทึก Master Data', true);
+            console.error("Error saving master data: ", e);
+        }
+    }
+
+    // --- UTILITY: Loading & Upload (OPTIMIZED) ---
+    function showLoading(text = 'กำลังดำเนินการ...') {
+        appDOMElements.modals.loading.querySelector('#loadingText').textContent = text;
+        appDOMElements.modals.loading.querySelector('#loadingProgress').textContent = '';
+        appDOMElements.modals.loading.classList.remove('hidden');
+    }
+
+    function updateLoadingProgress(percentage) {
+        const progressEl = appDOMElements.modals.loading.querySelector('#loadingProgress');
+        if (progressEl) progressEl.textContent = `${Math.round(percentage)}%`;
+    }
+
+    function hideLoading() {
+        appDOMElements.modals.loading.classList.add('hidden');
+    }
+
+    async function uploadImage(file, path) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                showLoading('กำลังบีบอัดรูปภาพ...');
+                const compressedDataUrl = await compressImage(file, 1280, 0.75);
+                const response = await fetch(compressedDataUrl);
+                const blob = await response.blob();
+                
+                const storageRef = storage.ref(path);
+                const task = storageRef.put(blob);
+
+                task.on('state_changed',
+                    snapshot => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        appDOMElements.modals.loading.querySelector('#loadingText').textContent = 'กำลังอัปโหลด...';
+                        updateLoadingProgress(progress);
+                    },
+                    error => {
+                        console.error("Firebase upload failed:", error);
+                        hideLoading();
+                        reject(error);
+                    },
+                    async () => {
+                        appDOMElements.modals.loading.querySelector('#loadingText').textContent = 'อัปโหลดสำเร็จ! กำลังบันทึก...';
+                        updateLoadingProgress(100);
+                        const downloadURL = await task.snapshot.ref.getDownloadURL();
+                        resolve(downloadURL);
+                    }
+                );
+            } catch (error) {
+                console.error("Error during image processing/upload:", error);
+                hideLoading();
+                reject(error);
+            }
+        });
+    }
+
+    // --- EVENT LISTENERS ---
+    function initializeDomElements() {
+        appDOMElements = {
+            viewContainer: document.getElementById('view-container'),
+            tabButtons: document.querySelectorAll('.tab-button'),
+            exportExcelBtn: document.getElementById('exportExcelBtn'),
+            exportBoardBtn: document.getElementById('exportBoardBtn'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            modals: {
+                action: document.getElementById('actionModal'),
+                qa: document.getElementById('qaModal'),
+                settings: document.getElementById('settingsModal'),
+                history: document.getElementById('historyModal'),
+                export: document.getElementById('exportModal'),
+                loading: document.getElementById('loadingOverlay')
+            }
+        };
+    }
+
+    function setupEventListeners() {
+        appDOMElements.tabButtons.forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+        appDOMElements.exportExcelBtn.addEventListener('click', exportToExcel);
+        appDOMElements.exportBoardBtn.addEventListener('click', openExportModal);
+        appDOMElements.settingsBtn.addEventListener('click', openSettingsModal);
+        document.getElementById('modal-container').addEventListener('click', e => {
+            if (e.target.classList.contains('modal-close-btn')) {
+                e.target.closest('.fixed').classList.add('hidden');
+            }
+        });
+    }
+
+    function setupViewEventListeners(view) {
+        if (view === 'form') {
+            document.getElementById('changeForm').addEventListener('submit', handleFormSubmit);
+            document.getElementById('changeType').addEventListener('change', updateDynamicFormElements);
+            document.getElementById('reasonCheckboxes').addEventListener('change', calculateRiskScore);
+            document.getElementById('surveillanceOtherCheckbox')?.addEventListener('change', e => document.getElementById('surveillanceOtherText').classList.toggle('hidden', !e.target.checked));
+            document.getElementById('initialEvidence')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                const preview = document.getElementById('initialImagePreview');
+                if (file) { preview.src = URL.createObjectURL(file); preview.classList.remove('hidden'); }
+            });
+        }
+        if (view === 'board') {
+            document.querySelectorAll('#filterText, #filterStatus, #filterRisk').forEach(filter => {
+                filter.addEventListener('input', () => { if (!isHighlighting) renderBoard(); });
+            });
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+                document.getElementById('filterText').value = '';
+                document.getElementById('filterStatus').value = '';
+                document.getElementById('filterRisk').value = '';
+                renderBoard();
+            });
+        }
+    }
+
+    // --- FORM & REPORT HANDLING ---
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const reportId = document.getElementById('reportId').value;
+        const initialFile = document.getElementById('initialEvidence')?.files[0];
+
+        if (!reportId && !initialFile) { alert('กรุณาแนบรูปภาพหลักฐานการเปิดเคส'); return; }
+        const score = calculateRiskScore();
+        if (score === 0 && !document.getElementById('otherReason').value) { alert('กรุณาเลือกเหตุผลอย่างน้อย 1 ข้อ'); return; }
+        
+        let surveillanceMeasures = getCheckedValues(document.getElementById('surveillanceMeasuresCheckboxes'));
+        const otherCheckbox = document.getElementById('surveillanceOtherCheckbox');
+        if (otherCheckbox.checked && document.getElementById('surveillanceOtherText').value.trim()) {
+            surveillanceMeasures.push(`อื่นๆ: ${document.getElementById('surveillanceOtherText').value.trim()}`);
+        }
+        
+        const reportData = {
+            type: document.getElementById('changeType').value,
+            line: document.getElementById('changeLine').value,
+            partName: document.getElementById('partName').value,
+            reporter: document.getElementById('reporterName').value,
+            docNumber: document.getElementById('docNumber').value,
+            risk: { score: score, level: score > 7 ? 'High' : (score > 3 ? 'Medium' : 'Low') },
+            countermeasure: {
+                main: getCheckedValues(document.getElementById('mainCountermeasuresCheckboxes')),
+                surveillance: surveillanceMeasures,
+                responsible: document.getElementById('responsible').value
+            },
+            reason: [...getCheckedValues(document.getElementById('reasonCheckboxes')), ...(document.getElementById('otherReason').value ? [`อื่นๆ: ${document.getElementById('otherReason').value}`] : [])].join('; ')
+        };
+
+        try {
+            if (reportId) {
+                showLoading('กำลังอัปเดตข้อมูล...');
+                const historyUpdate = { timestamp: new Date().toISOString(), action: 'แก้ไขข้อมูล', user: reportData.reporter, notes: 'แก้ไขข้อมูลในฟอร์ม', evidence: null };
+                await reportsCollection.doc(reportId).update({ ...reportData, history: firebase.firestore.FieldValue.arrayUnion(historyUpdate) });
+                showNotification('อัปเดตข้อมูลสำเร็จ!');
+            } else {
+                const newReportId = Date.now().toString();
+                const imagePath = `evidences/${newReportId}/initial.jpg`;
+                const evidenceUrl = await uploadImage(initialFile, imagePath);
+                const newReport = {
+                    ...reportData,
+                    timestamp: new Date().toISOString(), status: 'Open',
+                    qa: { result: null, defect: null, verifiedBy: null, evidence: null, timestamp: null },
+                    history: [{ timestamp: new Date().toISOString(), action: 'สร้างเคส', user: reportData.reporter, notes: 'เปิดเคสใหม่', evidence: evidenceUrl }],
+                    countermeasure: { ...reportData.countermeasure, dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() },
+                    customId: newReportId
+                };
+                await reportsCollection.doc(newReportId).set(newReport);
+                notifyNewCase({ ...newReport, id: newReportId });
+            }
+            switchView('board');
+        } catch (err) {
+            console.error("Error during form submission:", err);
+            showNotification("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + (err.message || 'Unknown error'), true);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function populateFormForEdit(report) {
+        switchView('form');
+        document.getElementById('reportId').value = report.id;
+        document.getElementById('changeType').value = report.type;
+        document.getElementById('docNumber').value = report.docNumber || '';
+        document.getElementById('changeLine').value = report.line;
+        document.getElementById('partName').value = report.partName;
+        document.getElementById('reporterName').value = report.reporter;
+        document.querySelector('.border-red-500').style.display = 'none';
+        updateDynamicFormElements();
+        report.reason.split('; ').forEach(r => {
+            if (r.startsWith('อื่นๆ:')) {
+                document.getElementById('otherReason').value = r.replace('อื่นๆ: ', '');
+            } else {
+                const c = document.querySelector(`#reasonCheckboxes input[value="${r}"]`);
+                if (c) c.checked = true;
+            }
+        });
+        report.countermeasure.main.forEach(m => {
+            const c = document.querySelector(`#mainCountermeasuresCheckboxes input[value="${m}"]`);
+            if (c) c.checked = true;
+        });
+        report.countermeasure.surveillance.forEach(m => {
+            if (m.startsWith('อื่นๆ:')) {
+                document.getElementById('surveillanceOtherCheckbox').checked = true;
+                const t = document.getElementById('surveillanceOtherText');
+                t.value = m.replace('อื่นๆ: ', '');
+                t.classList.remove('hidden');
+            } else {
+                const c = document.querySelector(`#surveillanceMeasuresCheckboxes input[value="${m}"]`);
+                if (c) c.checked = true;
+            }
+        });
+        document.getElementById('responsible').value = report.countermeasure.responsible;
+        calculateRiskScore();
+    }
+    
+    async function handleDeleteClick(e) {
+        const id = e.currentTarget.dataset.id;
+        if (confirm(`คุณต้องการลบเคส #${id} ใช่หรือไม่?`)) {
+            showLoading('กำลังลบเคส...');
+            try {
+                await reportsCollection.doc(id).delete();
+                hideLoading();
+                showNotification('ลบเคสสำเร็จ');
+            } catch (err) {
+                hideLoading();
+                showNotification('เกิดข้อผิดพลาดในการลบเคส', true);
+                console.error("Error deleting report:", err);
+            }
+        }
+    }
+
+    function handleEditClick(e) {
+        const id = e.currentTarget.dataset.id;
+        const report = reports.find(r => r.id === id);
+        if (report) populateFormForEdit(report);
+    }
+    
+    function renderBoard() {
+        const boardView = document.getElementById('view-container');
+        if (!boardView.querySelector('#board-Man')) return;
+
+        const filterText = boardView.querySelector('#filterText').value.toLowerCase();
+        const filterStatus = boardView.querySelector('#filterStatus').value;
+        const filterRisk = boardView.querySelector('#filterRisk').value;
+        
+        const filteredReports = reports.filter(r =>
+            (filterStatus ? r.status === filterStatus : true) &&
+            (filterRisk ? r.risk.level === filterRisk : true) &&
+            (filterText ? (r.line.toLowerCase().includes(filterText) || r.partName.toLowerCase().includes(filterText) || r.reporter.toLowerCase().includes(filterText) || r.countermeasure.responsible.toLowerCase().includes(filterText) || String(r.customId || r.id).includes(filterText)) : true)
+        );
+
+        const containers = { Man: boardView.querySelector('#board-Man .space-y-3'), Machine: boardView.querySelector('#board-Machine .space-y-3'), Material: boardView.querySelector('#board-Material .space-y-3'), Method: boardView.querySelector('#board-Method .space-y-3') };
+        Object.values(containers).forEach(c => c.innerHTML = '');
+        
+        boardView.querySelector('#no-data-message').style.display = (reports.length > 0 && filteredReports.length === 0) ? 'block' : 'none';
+        
+        filteredReports.forEach(report => {
+            if (containers[report.type]) containers[report.type].appendChild(createReportCard(report));
+        });
+        feather.replace();
+
+        if (highlightedReportId) {
+            setTimeout(() => {
+                const card = document.getElementById(`report-card-${highlightedReportId}`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.add('card-highlight');
+                }
+                highlightedReportId = null;
+                isHighlighting = false;
+            }, 500);
+        }
+    }
+    
+    function createReportCard(report) {
+        const card = document.createElement('div');
+        card.id = `report-card-${report.id}`;
+        card.className = "bg-white rounded-lg shadow-md border-t-4 p-4 flex flex-col space-y-2";
+        const typeColorMapping = {'Man':'border-blue-500', 'Machine':'border-yellow-500', 'Material':'border-green-500', 'Method':'border-purple-500'};
+        card.classList.add(typeColorMapping[report.type] || 'border-gray-500');
+        const isOverdue = !['Closed'].includes(report.status) && report.countermeasure.dueDate && new Date(report.countermeasure.dueDate) < new Date();
+        const statusInfo = STATUS_WORKFLOW[report.status];
+        const currentStep = statusInfo.step;
+        const progressBarHtml = `<div class="progress-bar">${Object.values(STATUS_WORKFLOW).filter(s => s.step).map(step => {
+                    let statusClass = 'pending'; let icon = `<span class="text-xs font-bold">${step.step}</span>`;
+                    if (step.step < currentStep) { statusClass = 'completed'; icon = `<i data-feather="check" class="w-4 h-4"></i>`; } 
+                    else if (step.step === currentStep) { statusClass = 'active'; icon = `<i data-feather="edit-2" class="w-4 h-4"></i>`; }
+                    if (step.step === 5) icon = `<i data-feather="flag" class="w-4 h-4"></i>`;
+                    return `<div class="step-item ${statusClass}" title="${step.text}"><div class="step-icon">${icon}</div><span class="step-label">${step.text}</span></div>`;
+                }).join('')}</div>`;
+        const detailsHtml = `<div class="space-y-1 text-xs mt-2"><details class="bg-gray-50 rounded p-1"><summary class="cursor-pointer font-semibold text-gray-600">เหตุผล...</summary><p class="p-2 border-t text-gray-700 whitespace-pre-wrap">${report.reason}</p></details>
+                ${(report.countermeasure.main || []).length > 0 ? `<details class="bg-blue-50 rounded p-1"><summary class="cursor-pointer font-semibold text-blue-800">มาตรการตอบโต้...</summary><ul class="p-2 border-t text-blue-900 list-disc list-inside">${report.countermeasure.main.map(m => `<li>${m}</li>`).join('')}</ul></details>` : ''}
+                ${(report.countermeasure.surveillance || []).length > 0 ? `<details class="bg-purple-50 rounded p-1"><summary class="cursor-pointer font-semibold text-purple-800">มาตรการเฝ้าระวัง...</summary><ul class="p-2 border-t text-purple-900 list-disc list-inside">${report.countermeasure.surveillance.map(m => `<li>${m}</li>`).join('')}</ul></details>` : ''}
+            </div>`;
+        const actionGuidanceHtml = statusInfo.next ? `<div class="text-center bg-blue-50 border border-blue-200 rounded-md p-2 my-2"><p class="text-xs text-blue-800 font-semibold">ขั้นตอนถัดไป: <span class="font-bold">${statusInfo.guidance}</span></p><p class="text-xs text-blue-700">ผู้รับผิดชอบ: <span class="font-bold">${statusInfo.role}</span></p></div>` : '';
+        let actionButton = statusInfo.next ? `<button data-id="${report.id}" data-action="${report.status}" class="action-btn w-full mt-auto text-sm py-2 rounded-lg font-bold ${statusInfo.buttonClass}">${statusInfo.buttonText}</button>` : `<div class="text-center text-sm py-2 text-green-700 font-bold flex items-center justify-center"><i data-feather="check-circle" class="w-5 h-5 mr-2"></i>เคสปิดแล้ว</div>`;
+        card.innerHTML = `<div><div class="flex justify-between items-start">
+                    <div><h4 class="text-base font-bold text-gray-900 leading-tight">${report.partName}</h4><p class="text-sm font-semibold text-gray-500">${report.line}</p></div>
+                    <div class="flex-shrink-0 flex items-center space-x-2"><span class="status-badge ${report.risk.level === 'High' ? 'risk-high' : (report.risk.level === 'Medium' ? 'risk-medium' : 'risk-low')}">Risk: ${report.risk.level}</span>${isOverdue ? `<span class="status-badge bg-red-600 text-white animate-pulse">OVERDUE</span>` : ''}</div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">ID: ${report.customId || report.id} | โดย: <span class="font-semibold">${report.reporter}</span></p>
+            </div>
+            ${progressBarHtml} ${detailsHtml}
+            <div class="mt-auto pt-2 space-y-2">
+                ${actionGuidanceHtml} <div class="flex-grow">${actionButton}</div>
+                <div class="flex items-center justify-center space-x-2 text-xs border-t pt-2">
+                    <button title="ส่งแจ้งเตือน" data-id="${report.id}" class="remind-btn text-gray-400 hover:text-blue-600 p-1 ${report.status === 'Closed' ? 'hidden' : ''}"><i data-feather="bell" class="w-4 h-4"></i></button>
+                    <button title="ประวัติ" data-id="${report.id}" class="history-btn text-gray-400 hover:text-blue-600 p-1"><i data-feather="clock" class="w-4 h-4"></i></button>
+                    <button title="แก้ไขข้อมูลพื้นฐาน" data-id="${report.id}" class="edit-btn text-gray-400 hover:text-yellow-600 p-1"><i data-feather="edit" class="w-4 h-4"></i></button>
+                    <button title="Export PNG" data-id="${report.id}" class="export-card-btn text-gray-400 hover:text-blue-600 p-1"><i data-feather="camera" class="w-4 h-4"></i></button>
+                    <button title="ลบ" data-id="${report.id}" class="delete-btn text-gray-400 hover:text-red-600 p-1"><i data-feather="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>`;
+        
+        card.querySelector('.action-btn')?.addEventListener('click', (e) => openActionModal(e.currentTarget.dataset.id, e.currentTarget.dataset.action));
+        card.querySelector('.remind-btn')?.addEventListener('click', (e) => notifyReminder(e.currentTarget.dataset.id));
+        card.querySelector('.history-btn')?.addEventListener('click', showHistoryModal);
+        card.querySelector('.edit-btn')?.addEventListener('click', handleEditClick);
+        card.querySelector('.export-card-btn')?.addEventListener('click', exportCardAsPng);
+        card.querySelector('.delete-btn')?.addEventListener('click', handleDeleteClick);
+        return card;
+    }
+
+    function openActionModal(reportId, action) {
+        const statusInfo = STATUS_WORKFLOW[action];
+        if (!statusInfo || !statusInfo.next) return;
+        if (action === 'Action Taken') { openQaModal(reportId); return; }
+
+        const modal = appDOMElements.modals.action;
+        modal.querySelector('#actionModalTitle').textContent = statusInfo.buttonText;
+        modal.querySelector('#actionReportId').value = reportId;
+        modal.querySelector('#actionName').value = action;
+        modal.querySelector('form').reset(); 
+        modal.querySelector('#deptHeadActionSection').classList.add('hidden');
+        modal.querySelector('#sectionHeadActionSection').classList.add('hidden');
+        modal.querySelector('#groupLeaderActionSection').classList.add('hidden');
+        const checkboxRenderer = (opt) => `<label class="flex items-center text-sm p-2 rounded hover:bg-gray-100 cursor-pointer"><input type="checkbox" value="${opt}" class="rounded border-gray-300 mr-2">${opt}</label>`;
+        if (action === 'Open') { const container = modal.querySelector('#deptHeadCheckboxes'); container.innerHTML = DEPT_HEAD_ACTIONS.map(checkboxRenderer).join(''); modal.querySelector('#deptHeadActionSection').classList.remove('hidden'); }
+        else if (action === 'Acknowledged') { const container = modal.querySelector('#sectionHeadCheckboxes'); container.innerHTML = SECTION_HEAD_ACTIONS.map(checkboxRenderer).join(''); modal.querySelector('#sectionHeadActionSection').classList.remove('hidden'); }
+        else if (action === 'Verified') { const container = modal.querySelector('#groupLeaderCheckboxes'); container.innerHTML = GROUP_LEADER_CLOSURE_ACTIONS.map(checkboxRenderer).join(''); modal.querySelector('#groupLeaderActionSection').classList.remove('hidden'); }
+        
+        const preview = modal.querySelector('#actionImagePreview');
+        preview.src = ''; preview.classList.add('hidden');
+        
+        const submitBtn = modal.querySelector('#actionSubmitBtn');
+        submitBtn.className = `bg-blue-600 text-white px-4 py-2 rounded-lg ${statusInfo.buttonClass}`;
+        submitBtn.textContent = statusInfo.buttonText;
+        modal.classList.remove('hidden');
+        
+        modal.querySelector('#actionForm').onsubmit = handleActionSubmit;
+        modal.querySelector('#actionEvidence').onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) { preview.src = URL.createObjectURL(file); preview.classList.remove('hidden'); }
+        };
+    }
+    
+    async function handleActionSubmit(e) {
+        e.preventDefault();
+        const form = document.getElementById('actionForm');
+        const id = form.querySelector('#actionReportId').value;
+        const action = form.querySelector('#actionName').value;
+        const user = form.querySelector('#actionUser').value;
+        const file = form.querySelector('#actionEvidence').files[0];
+        
+        if (!user) { alert('กรุณากรอกชื่อผู้ดำเนินการ'); return; }
+        if (!file) { alert('กรุณาแนบรูปภาพหลักฐาน'); return; }
+
+        let selectedOptions = [];
+        if (action === 'Open') { selectedOptions = getCheckedValues(form.querySelector('#deptHeadCheckboxes')); } 
+        else if (action === 'Acknowledged') { selectedOptions = getCheckedValues(form.querySelector('#sectionHeadCheckboxes')); } 
+        else if (action === 'Verified') { selectedOptions = getCheckedValues(form.querySelector('#groupLeaderCheckboxes')); }
+        
+        if (selectedOptions.length === 0 && !form.querySelector('#actionNotes').value.trim()) {
+            alert('กรุณาเลือกอย่างน้อย 1 รายการ หรือกรอกบันทึกเพิ่มเติม');
+            return;
+        }
+
+        let combinedNotes = selectedOptions.map(opt => `- ${opt}`).join('\n');
+        const userNotes = form.querySelector('#actionNotes').value.trim();
+        if (userNotes) {
+            combinedNotes = combinedNotes ? `${combinedNotes}\n\n**เพิ่มเติม:**\n${userNotes}` : userNotes;
+        }
+        
+        try {
+            const imagePath = `evidences/${id}/${action}_${Date.now()}.jpg`;
+            const evidenceUrl = await uploadImage(file, imagePath);
+            const newHistoryEntry = {
+                timestamp: new Date().toISOString(),
+                action: STATUS_WORKFLOW[action].buttonText,
+                user: user,
+                notes: combinedNotes,
+                evidence: evidenceUrl
+            };
+            
+            await reportsCollection.doc(id).update({
+                status: STATUS_WORKFLOW[action].next,
+                history: firebase.firestore.FieldValue.arrayUnion(newHistoryEntry)
+            });
+            
+            appDOMElements.modals.action.classList.add('hidden');
+            showNotification('ดำเนินการสำเร็จ!');
+        } catch(err) {
+            showNotification('เกิดข้อผิดพลาด: ' + (err.message || 'Unknown error'), true);
+            console.error("Error submitting action:", err);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function openQaModal(id) {
+        const qaModal = appDOMElements.modals.qa;
+        const form = qaModal.querySelector('form');
+        form.reset();
+        qaModal.querySelector('#qaReportId').value = id;
+        qaModal.querySelector('#defectSection').style.display = 'none';
+        const preview = qaModal.querySelector('#qaImagePreview');
+        preview.classList.add('hidden');
+        preview.src = '';
+        qaModal.classList.remove('hidden');
+        form.onsubmit = handleQaSubmit;
+        qaModal.querySelectorAll('input[name="qaResult"]').forEach(radio => {
+            radio.onchange = () => { qaModal.querySelector('#defectSection').style.display = radio.value === 'NG' ? 'block' : 'none'; }
+        });
+        qaModal.querySelector('#qaEvidence').onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) { preview.src = URL.createObjectURL(file); preview.classList.remove('hidden'); }
+        };
+    }
+
+    async function handleQaSubmit(e) {
+        e.preventDefault();
+        const qaForm = document.getElementById('qaForm');
+        const id = qaForm.querySelector('#qaReportId').value;
+        const verifiedBy = qaForm.querySelector('#verifiedBy').value;
+        const file = qaForm.querySelector('#qaEvidence').files[0];
+        if(!verifiedBy) { alert('กรุณากรอกชื่อผู้ตรวจสอบ'); return; }
+        if (!file) { alert('กรุณาแนบรูปภาพหลักฐาน'); return; }
+
+        try {
+            const imagePath = `evidences/${id}/qa_${Date.now()}.jpg`;
+            const evidenceUrl = await uploadImage(file, imagePath);
+            const result = qaForm.qaResult.value;
+            const qaData = {
+                result: result,
+                verifiedBy: verifiedBy,
+                evidence: evidenceUrl,
+                defect: result === 'NG' ? qaForm.querySelector('#defectCode').value : null,
+                timestamp: new Date().toISOString()
+            };
+            const newHistoryEntry = {
+                timestamp: qaData.timestamp,
+                action: `ตรวจสอบผล: ${qaData.result}`,
+                user: verifiedBy,
+                notes: `ผล: ${qaData.result}${qaData.defect ? ', ของเสีย: ' + qaData.defect : ''}`,
+                evidence: evidenceUrl
+            };
+            await reportsCollection.doc(id).update({
+                qa: qaData,
+                status: 'Verified',
+                history: firebase.firestore.FieldValue.arrayUnion(newHistoryEntry)
+            });
+            const report = reports.find(r => r.id === id);
+            if(report) notifyQaResult({ ...report, qa: qaData });
+            appDOMElements.modals.qa.classList.add('hidden');
+            showNotification('บันทึกผล QA สำเร็จ!');
+        } catch (err) {
+            showNotification('เกิดข้อผิดพลาด: ' + (err.message || 'Unknown error'), true);
+            console.error("Error submitting QA:", err);
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    function showHistoryModal(e) {
+        const reportId = e.currentTarget.dataset.id;
+        const report = reports.find(r => r.id === reportId);
+        if (!report) return;
+        const modal = appDOMElements.modals.history;
+        const historyContent = (report.history || []).slice().reverse().map(h => 
+            `<div class="border-b pb-2 mb-2">
+                <p><strong>${h.action}</strong> โดย ${h.user || 'N/A'}</p>
+                <p class="text-gray-500 text-xs">${new Date(h.timestamp).toLocaleString('th-TH')}</p>
+                ${h.notes ? `<p class="mt-1 text-gray-800 bg-gray-100 p-2 rounded text-sm whitespace-pre-wrap">${h.notes}</p>` : ''}
+                ${h.evidence ? `<a href="${h.evidence}" target="_blank" class="text-blue-600 hover:underline text-sm mt-1 inline-block">ดูหลักฐาน 📸</a>` : ''}
+            </div>`
+        ).join('');
+        modal.querySelector('#historyContent').innerHTML = historyContent || '<p class="text-center text-gray-500">ไม่มีประวัติ</p>';
+        modal.querySelector('#exportHistoryBtn').onclick = () => exportHistoryToExcel(reportId);
+        modal.classList.remove('hidden');
+    }
+
+    function openSettingsModal() {
+        document.getElementById('masterParts').value = (masterData.parts || []).join(', ');
+        document.getElementById('masterLines').value = (masterData.lines || []).join(', ');
+        document.getElementById('masterResponsibles').value = (masterData.responsibles || []).join(', ');
+        document.getElementById('saveSettingsBtn').onclick = saveSettings;
+        appDOMElements.modals.settings.classList.remove('hidden');
+    }
+
+    function saveSettings() {
+        masterData.parts = document.getElementById('masterParts').value.split(',').map(s => s.trim()).filter(Boolean);
+        masterData.lines = document.getElementById('masterLines').value.split(',').map(s => s.trim()).filter(Boolean);
+        masterData.responsibles = document.getElementById('masterResponsibles').value.split(',').map(s => s.trim()).filter(Boolean);
+        saveMasterData();
+        populateDatalists();
+        appDOMElements.modals.settings.classList.add('hidden');
+    }
+    
+    function openExportModal() {
+        const form = appDOMElements.modals.export.querySelector('#exportForm');
+        form.innerHTML = Object.keys(STATUS_WORKFLOW).map(status => `<label class="flex items-center"><input type="checkbox" name="exportStatus" value="${status}" class="rounded border-gray-300" checked><span class="ml-2">${STATUS_WORKFLOW[status].text}</span></label>`).join('');
+        appDOMElements.modals.export.classList.remove('hidden');
+        document.getElementById('exportPdfBtn').onclick = generateBoardPdf;
+    }
+
+    function calculateRiskScore() {
+        let score = 0;
+        getCheckedValues(document.getElementById('reasonCheckboxes')).forEach(reason => { score += (RISK_SCORES[reason] || 1); });
+        document.getElementById('riskScoreDisplay').textContent = score;
+        return score;
+    }
+
+    function populateDatalists() {
+        if(document.getElementById('parts-list')) {
+            document.getElementById('parts-list').innerHTML = (masterData.parts || []).map(p => `<option value="${p}"></option>`).join('');
+            document.getElementById('lines-list').innerHTML = (masterData.lines || []).map(l => `<option value="${l}"></option>`).join('');
+            document.getElementById('responsibles-list').innerHTML = (masterData.responsibles || []).map(r => `<option value="${r}"></option>`).join('');
+        }
+    }
+
+    function populateStaticDropdowns() {
+        const statusFilter = document.querySelector('#filterStatus');
+        if (statusFilter) statusFilter.innerHTML = `<option value="">สถานะทั้งหมด</option>` + Object.keys(STATUS_WORKFLOW).map(s => `<option value="${s}">${STATUS_WORKFLOW[s].text}</option>`).join('');
+        const defectCodeSelect = document.getElementById('defectCode');
+        if(defectCodeSelect) defectCodeSelect.innerHTML = DEFECT_CODES.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
+    function updateDynamicFormElements() {
+        const type = document.getElementById('changeType')?.value;
+        updateCheckboxes(document.getElementById('reasonCheckboxes'), REASONS_BY_TYPE[type] || []);
+        updateCheckboxes(document.getElementById('mainCountermeasuresCheckboxes'), COUNTERMEASURES_BY_TYPE[type] || []);
+        updateCheckboxes(document.getElementById('surveillanceMeasuresCheckboxes'), SURVEILLANCE_MEASURES);
+        calculateRiskScore();
+    }
+
+    function updateCheckboxes(container, options) {
+        if (!container) return;
+        container.innerHTML = options.length === 0 
+            ? `<p class="text-gray-400 col-span-full">กรุณาเลือกประเภท 4M ก่อน</p>` 
+            : options.map((option) => `<label class="flex items-center text-sm p-1 hover:bg-gray-100 rounded cursor-pointer"><input type="checkbox" value="${option}" class="rounded border-gray-300"><span class="ml-2 text-gray-700">${option}</span></label>`).join('');
+    }
+
+    function getCheckedValues(container) {
+        if (!container) return [];
+        return Array.from(container.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+    }
+    
+    async function sendTelegramNotification(message, actionUrl = null) {
+        if (!TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) return;
+        const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+        const params = new URLSearchParams({ chat_id: TELEGRAM_CONFIG.CHAT_ID, text: message, parse_mode: 'Markdown' });
+        if (actionUrl) params.append('reply_markup', JSON.stringify({ inline_keyboard: [[ { text: '📋 ดูบน 4M Board', url: actionUrl } ]] }));
+        try { await fetch(`${url}?${params.toString()}`); } 
+        catch (error) { console.error('Error sending Telegram notification:', error); }
+    }
+
+    function notifyNewCase(report) {
+        const riskEmoji = report.risk.level === 'High' ? '🚨' : (report.risk.level === 'Medium' ? '⚠️' : 'ℹ️');
+        const message = `${riskEmoji} *New 4M Change*\n*Case ID:* \`${report.customId || report.id}\`\n*Part:* ${report.partName}\n*Line:* ${report.line}\n*Risk:* ${report.risk.level} (${report.risk.score})\n--------------------------------------\n👤 *เรียน:* ${report.countermeasure.responsible}\n👉 *โปรดดำเนินการขั้นต่อไป: รับทราบปัญหา*`.trim();
+        const actionUrl = `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}&t=${Date.now()}`;
+        sendTelegramNotification(message, actionUrl);
+    }
+
+    function notifyQaResult(report) {
+        const resultEmoji = report.qa.result === 'OK' ? '✅' : '❌';
+        const message = `${resultEmoji} *QA Verification Result*\n*Case ID:* \`${report.customId || report.id}\` (${report.partName})\n*Result:* *${report.qa.result}*\n${report.qa.result === 'NG' ? `*Defect:* ${report.qa.defect}\n` : ''}*Verified by:* ${report.qa.verifiedBy}\n--------------------------------------\n👤 *เรียน:* ${report.countermeasure.responsible}\n👉 *โปรดดำเนินการขั้นต่อไป*`.trim();
+        const actionUrl = `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}&t=${Date.now()}`;
+        sendTelegramNotification(message, actionUrl);
+    }
+
+    function notifyReminder(reportId) {
+        const report = reports.find(r => r.id === reportId);
+        if (!report || !confirm(`ต้องการส่งแจ้งเตือนสำหรับเคส #${report.customId || report.id} (${report.partName}) หรือไม่?`)) return;
+        const statusInfo = STATUS_WORKFLOW[report.status];
+        const message = `🔔 *Reminder: 4M Change*\n*Case ID:* \`${report.customId || report.id}\` (${report.partName})\n*Current Status:* ${statusInfo.text}\n--------------------------------------\n‼️ *เรียน:* ${statusInfo.role}\n👉 *โปรดดำเนินการขั้นต่อไป:* ${statusInfo.guidance}`.trim();
+        const actionUrl = `${TELEGRAM_CONFIG.BASE_URL}?view=board&highlight=${report.id}&t=${Date.now()}`;
+        sendTelegramNotification(message, actionUrl);
+        showNotification('ส่งแจ้งเตือนสำเร็จ!');
+    }
+
+    function showNotification(message, isError = false) { alert(message); }
+
+    function compressImage(file, maxWidth = 1024, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const scale = Math.min(1, maxWidth / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(ctx.canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function generateBoardPdf() {
+        showLoading('กำลังสร้าง PDF...');
+        const selectedStatuses = getCheckedValues(document.getElementById('exportForm'));
+        const reportsToExport = reports.filter(r => selectedStatuses.includes(r.status));
+        if (reportsToExport.length === 0) { showNotification('ไม่พบการ์ดตามสถานะที่เลือก', true); hideLoading(); return; }
+        const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        const cardWidth = 190;
+        let yPos = 10;
+        for (const report of reportsToExport) {
+            const cardElement = createReportCard(report); document.body.appendChild(cardElement); 
+            const canvas = await html2canvas(cardElement, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const cardHeight = (canvas.height * cardWidth) / canvas.width;
+            if (yPos + cardHeight > 287) { doc.addPage(); yPos = 10; }
+            doc.addImage(imgData, 'PNG', 10, yPos, cardWidth, cardHeight);
+            yPos += cardHeight + 5;
+            document.body.removeChild(cardElement);
+        }
+        doc.save(`4M_Board_Export_${new Date().toISOString().slice(0, 10)}.pdf`);
+        hideLoading();
+    }
+
+    async function exportCardAsPng(e) {
+        const id = e.currentTarget.dataset.id;
+        const cardElement = document.getElementById(`report-card-${id}`);
+        if(cardElement) {
+            showLoading('กำลังสร้างรูปภาพ...');
+            try {
+                const canvas = await html2canvas(cardElement, { scale: 3, useCORS: true, logging: false });
+                const link = document.createElement('a');
+                link.download = `4M-Card-${id}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) { console.error("Error exporting card:", err); showNotification("เกิดข้อผิดพลาดในการ Export รูปภาพ", true); } 
+            finally { hideLoading(); }
+        }
+    }
+
+    function exportToExcel() {
+        if (reports.length === 0) { showNotification('ไม่มีข้อมูลสำหรับ Export', true); return; }
+        const dataForExport = reports.map(report => ({ 'Case ID': report.customId || report.id, 'วันที่สร้าง': new Date(report.timestamp).toLocaleString('th-TH'), 'ประเภท 4M': report.type, 'ไลน์ผลิต': report.line, 'ชื่อชิ้นงาน': report.partName, 'เอกสารควบคุม': report.docNumber || '', 'ผู้รายงาน': report.reporter, 'เหตุผลการเปลี่ยนแปลง': report.reason, 'สาเหตุหลัก': report.reason.split(';').map(r => r.trim()).find(r => !r.startsWith('อื่นๆ:')) || 'N/A', 'ระดับความเสี่ยง': report.risk.level, 'คะแนนความเสี่ยง': report.risk.score, 'มาตรการตอบโต้หลัก': (report.countermeasure.main || []).join('\n'), 'มาตรการเฝ้าระวัง': (report.countermeasure.surveillance || []).join('\n'), 'ผู้รับผิดชอบ': report.countermeasure.responsible, 'กำหนดเสร็จ': report.countermeasure.dueDate ? new Date(report.countermeasure.dueDate).toLocaleString('th-TH') : '', 'สถานะ': STATUS_WORKFLOW[report.status].text, 'ผล QA': report.qa.result || '', 'ผู้ตรวจสอบ (QA)': report.qa.verifiedBy || '', 'รหัสของเสีย': report.qa.defect || '', 'วันที่ตรวจสอบ QA': report.qa.timestamp ? new Date(report.qa.timestamp).toLocaleString('th-TH') : '' }));
+        const ws = XLSX.utils.json_to_sheet(dataForExport);
+        const header = Object.keys(dataForExport[0]);
+        ws['!cols'] = header.map(h => ({ wch: dataForExport.reduce((w, r) => Math.max(w, String(r[h] || '').length), h.length) + 5 }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '4M_Reports');
+        XLSX.writeFile(wb, `4M_Data_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    function exportHistoryToExcel(reportId) {
+        const report = reports.find(r => r.id === reportId);
+        if (!report || !report.history || report.history.length === 0) { showNotification('ไม่มีประวัติสำหรับ Export', true); return; }
+        const dataForExport = report.history.map(h => ({ 'Timestamp': new Date(h.timestamp).toLocaleString('th-TH'), 'Action': h.action, 'User': h.user, 'Notes': h.notes || '', 'Evidence': h.evidence ? 'Yes' : 'No' }));
+        const ws = XLSX.utils.json_to_sheet(dataForExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `History_Case_${reportId}`);
+        XLSX.writeFile(wb, `4M_History_Case_${reportId}.xlsx`);
+    }
+
+    function renderDashboard() {
+        const container = document.getElementById('view-container');
+        if(reports.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 py-10"><i class="w-16 h-16 mx-auto text-gray-400" data-feather="bar-chart-2"></i><span class="mt-4 block">ยังไม่มีข้อมูลสำหรับแสดงผล</span></p>'; feather.replace(); return; }
+        const reasonCounts = reports.flatMap(r => r.reason.split('; ').filter(reason => !reason.startsWith('อื่นๆ:'))).reduce((acc, reason) => { acc[reason] = (acc[reason] || 0) + 1; return acc; }, {});
+        const top5Reasons = Object.entries(reasonCounts).sort(([,a],[,b]) => b-a).slice(0, 5);
+        createChart('reasonsChart', 'bar', top5Reasons.map(item => item[0]), top5Reasons.map(item => item[1]), 'จำนวนครั้ง');
+        const typeCounts = reports.reduce((acc, r) => { acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
+        createChart('typesChart', 'pie', Object.keys(typeCounts), Object.values(typeCounts));
+        const lineCounts = reports.reduce((acc, r) => { acc[r.line] = (acc[r.line] || 0) + 1; return acc; }, {});
+        const top5Lines = Object.entries(lineCounts).sort(([,a],[,b]) => b-a).slice(0, 5);
+        createChart('linesChart', 'bar', top5Lines.map(item => item[0]), top5Lines.map(item => item[1]), 'จำนวนครั้ง');
+        const defectCounts = reports.filter(r => r.qa.result === 'NG' && r.qa.defect && r.qa.defect !== 'ไม่มี').reduce((acc, r) => { acc[r.qa.defect] = (acc[r.qa.defect] || 0) + 1; return acc; }, {});
+        createChart('defectsChart', 'bar', Object.keys(defectCounts), Object.values(defectCounts), 'จำนวนครั้ง');
+    }
+
+    function createChart(canvasId, type, labels, data, label) {
+        const ctx = document.getElementById(canvasId)?.getContext('2d');
+        if (!ctx) return;
+        if(appDOMElements.charts && appDOMElements.charts[canvasId]) appDOMElements.charts[canvasId].destroy();
+        if(!appDOMElements.charts) appDOMElements.charts = {};
+        appDOMElements.charts[canvasId] = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: label, data: data, backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#6b7280', '#ec4899', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: type === 'pie' } } } });
+    }
+    
+    // --- INITIALIZE APP ---
+    init();
+});
+</script>
+</body>
+</html>
